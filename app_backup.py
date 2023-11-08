@@ -2,19 +2,12 @@ import dash
 from dash import dcc
 from dash import html
 from dash import dash_table
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
 from data_retrieval import retrieve_and_process_csv
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules
 
-
-df = retrieve_and_process_csv()
-remove_special_chars(df)
-df = convert_kg_to_lbs(df)
-df = apply_business_rules(df)
-
-#print(df['AgeClass'].unique())
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR], suppress_callback_exceptions=True)
 
@@ -35,7 +28,10 @@ app.layout = html.Div(children=[
     html.Div(id='tab-content', style={'margin-top': '20px'}),
 ])
 
-
+df = retrieve_and_process_csv()
+remove_special_chars(df)
+df = convert_kg_to_lbs(df)
+df = apply_business_rules(df)
 
 def render_comp_data():
     return html.Div([
@@ -47,17 +43,26 @@ def render_comp_data():
             id='weightclass-filter',
             options=[{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()],
             multi=True,
-            placeholder='Select weight class...'
+            placeholder='Select weight class...',
+            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent'}
         ),
         dcc.Dropdown(
             id='ageclass-filter',
-            options=[{'label': ageClass, 'value': ageClass} for ageClass in df['AgeClass'].unique() if ageClass is not None],
+            options=[{'label': ageClass, 'value': ageClass} for ageClass in df['AgeClass'].unique() if
+                     ageClass is not None],
             multi=True,
-            placeholder='Select age class...'
+            placeholder='Select age class...',
+            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent'}
         ),
-        #html.Button('Load Data', id='load-data-button'),
-        #dcc.Loading(id="loading", type="default", children=[html.Div(id='data-table-container')]),
-        #dash_table.DataTable(df.to_dict('records'),[{"name": i, "id": i} for i in df.columns], id='tbl')
+        dcc.RadioItems(
+            id='sex-filter',
+            options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
+                     {'label': 'Mx', 'value': 'Mx'}],
+            labelStyle={'display': 'inline', 'margin-right': '10px'},
+            style={'background-color': 'transparent', 'margin-bottom': '10px'}
+        ),
+        html.Button('Load Data', id='load-data-button'),
+        dcc.Loading(id="loading", type="default", children=[html.Div(id='data-table-container')]),
     ])
 
 
@@ -66,7 +71,7 @@ def render_user_stats():
         html.H3('Model Overview', style={'color': text_color}),
         html.P('This tab provides an explanation of the predictive model and its methodology.',
                style={'color': text_color})
-        # You can add more content here to explain the model
+
     ])
 
 
@@ -75,7 +80,7 @@ def render_comparative_analysis():
         html.H3('Price Predictor', style={'color': text_color}),
         html.P('This tab allows you to input values and see predictions for specific scenarios.',
                style={'color': text_color}),
-        # You can add your prediction input form and results display here
+
     ])
 
 
@@ -91,16 +96,22 @@ def render_content(active_tab):
         return html.Div([])
 
 @app.callback(
-    Output('tbl', 'data'),
-    Input('weightclass-filter', 'value'),
-    Input('ageclass-filter', 'value')
+    Output('data-table-container', 'children'),
+    Input('load-data-button', 'n_clicks'),
+    State('weightclass-filter', 'value'),
+    State('ageclass-filter', 'value'),
+    State('sex-filter', 'value')
 )
-def update_filtered_data(selected_names, selected_cities):
-    if selected_names or selected_cities:
-        filtered_df = df[df['WeightClassKg'].isin(selected_names) & df['AgeClass'].isin(selected_cities)]
-        return filtered_df.to_dict('records')
-    else:
-        return []
+def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, selected_sex):
+    if n_clicks:
+
+        # Filter the data based on selections
+        filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (df['Sex'] == selected_sex)]
+        # Populate the filtered data in the DataTable
+        return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns])
+
+    # Initially, return an empty div
+    return html.Div()
 
 
 if __name__ == '__main__':

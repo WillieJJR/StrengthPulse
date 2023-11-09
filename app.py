@@ -10,6 +10,42 @@ from data_retrieval import retrieve_and_process_csv
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules
 
 
+def kpi_one():
+    return html.Div([
+        dbc.Card(
+            dbc.CardBody([
+                html.Div([
+                    html.H4("Your Squat is better than:"),
+                    html.Div(id = 'output_missing_vals'),
+                ], style={'textAlign': 'center'})
+            ])
+        ),
+    ])
+
+def kpi_two():
+    return html.Div([
+        dbc.Card(
+            dbc.CardBody([
+                html.Div([
+                    html.H4("Your Bench Press is better than:"),
+                    html.Div(id = 'output_distinct_vals'),
+                ], style={'textAlign': 'center'})
+            ])
+        ),
+    ])
+
+def kpi_three():
+    return html.Div([
+        dbc.Card(
+            dbc.CardBody([
+                html.Div([
+                    html.H4("Your Deadlift is better than:"),
+                    html.Div(id = 'output_column_type'),
+                ], style={'textAlign': 'center'})
+            ])
+        ),
+    ])
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR], suppress_callback_exceptions=True)
 
 # Define colors
@@ -76,13 +112,13 @@ def render_user_stats():
         html.P('This tab provides an explanation of the predictive model and its methodology.',
                style={'color': text_color}),
 
-        dcc.Dropdown(
-            id='country-filter',
-            options=[{'label': Country, 'value': Country} for Country in df['Country'].unique()],
-            multi=True,
-            placeholder='Select Country...',
-            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        ), #need to fix the countries where null values exist (maybe filter only to usa?)
+        # dcc.Dropdown(
+        #     id='country-filter',
+        #     options=[{'label': Country, 'value': Country} for Country in df['Country'].unique()],
+        #     multi=True,
+        #     placeholder='Select Country...',
+        #     style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
+        # ), #need to fix the countries where null values exist (maybe filter only to usa?)
         dcc.Dropdown(
             id='federation-filter',
             options=[{'label': Federation, 'value': Federation} for Federation in df['Federation'].unique() if
@@ -91,6 +127,7 @@ def render_user_stats():
             placeholder='Select Federation...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
+        html.Button('Lbs', id='lbs-button'),
         dcc.RadioItems(
             id='sex-filter',
             options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
@@ -102,10 +139,32 @@ def render_user_stats():
         dcc.Input(id='name-input', type='text', placeholder='Enter Name'),
         dcc.Input(id='age-input', type='number', placeholder='Enter Age'),
         dcc.Input(id='weight-input', type='number', placeholder='Enter Weight'),
-        dcc.Input(id='squat-input', type='number', placeholder='Enter best competition Squat'),
-        dcc.Input(id='bench-input', type='number', placeholder='Enter best competition bench Press'),
-        dcc.Input(id='deadlift-input', type='number', placeholder='Enter best competition Deadlift'),
-        html.Button('Add Data', id='add-data-button')
+        dcc.Input(id='squat-input', type='number', placeholder='Competition Squat'),
+        dcc.Input(id='bench-input', type='number', placeholder='Competition bench Press'),
+        dcc.Input(id='deadlift-input', type='number', placeholder='Competition Deadlift'),
+        html.Button('Add Data', id='add-data-button'),
+
+        html.Div([
+            dbc.Card([
+                dbc.CardBody([
+                    dbc.Row([
+                        dbc.Col([
+                            kpi_one()
+                        ], width=4),
+                        dbc.Col([
+                            kpi_two()
+                        ], width=4),
+                        dbc.Col([
+                            kpi_three()
+                        ], width=4),
+                    ], align='center')
+                ])
+            ], className='mb-2', style={
+                'backgroundColor': 'rgba(0,0,0,0)',
+                'color': 'white',
+                'text-align': 'center'
+            })
+        ], className="row"),
     ])
 
 
@@ -149,10 +208,41 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
     # Initially, return an empty div
     return html.Div()
 
+@app.callback(
+    Output('lbs-button', 'style'),
+    Input('lbs-button', 'n_clicks')
+)
+
+def update_kg_lb_button(n_clicks):
+    if n_clicks and n_clicks % 2 == 0:
+        lbs_button_style = {
+            'borderRadius': '12px',
+            'background-color': 'rgba(0, 255, 0, 0.5)',
+            'color': 'white',
+            'height': '30px',  # set the height of the buttons
+            'width': '90px',  # set the width of the buttons
+        }
+        print('on')
+    else:
+        lbs_button_style = {
+            'borderRadius': '12px',
+            'background-color': 'rgba(211, 211, 211, 0.5)',
+            'color': 'white',
+            'height': '30px',  # set the height of the buttons
+            'width': '90px',  # set the width of the buttons
+        }
+        print('off')
+
+    return lbs_button_style
+
 #Define callback to add user data to the list
 @app.callback(
     Output('name-input', 'value'),
     Output('age-input', 'value'),
+    Output('weight-input', 'value'),
+    Output('squat-input', 'value'),
+    Output('bench-input', 'value'),
+    Output('deadlift-input', 'value'),
     Input('add-data-button', 'n_clicks'),
     State('name-input', 'value'),
     State('age-input', 'value'),
@@ -168,13 +258,12 @@ def add_user_data(n_clicks, name, age, weight, squat, bench, deadlift):
             #return f"User Data: {user_data}", '', ''
         else:
             return "Please enter both name and age", name, age
-    return '', '', ''
+    return '', '', '', '', '', ''
 
 # Define callback to merge user data into the existing DataFrame
 @app.callback(
     Output('merged-data-table', 'children'),
     Input('add-data-button', 'n_clicks'),
-    Input('country-filter', 'value'),
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
     State('name-input', 'value'),
@@ -184,17 +273,17 @@ def add_user_data(n_clicks, name, age, weight, squat, bench, deadlift):
     State('bench-input', 'value'),
     State('deadlift-input', 'value'),
 )
-def merge_data(n_clicks, country, federation, sex, name, age, weight):
+def merge_data(n_clicks, federation, sex, name, age, weight):
     if n_clicks:
         if name and age and weight:
-            user_data_df = pd.DataFrame(user_data)
-            existing_df = df[df['Country'].isin(country) & df['Federation'].isin(federation) & (df['Sex'] == sex)]
-            merged_df = pd.concat([existing_df, user_data_df], ignore_index=True)
-    #         return [
-    #             html.Tr([html.Th(col) for col in merged_df.columns])] +
-    #             [html.Tr([html.Td(merged_df.iloc[i][col]) for col in merged_df.columns]) for i in range(len(merged_df))]
-    #         ]
-    # return []
+            #map out weightclasses so we can classify user weight class for lift comparison
+            filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex)]
+            df_grouped = df.groupby('Name').agg(squat=('Best3SquatKg', 'max'),
+                                                bench=('Best3BenchKg', 'max'),
+                                                deadlift=('Best3DeadliftKg', 'max'),
+                                                wilks=('Wilks', 'max')
+                                                ).reset_index()
+
 
 
 if __name__ == '__main__':

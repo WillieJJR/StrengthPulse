@@ -31,6 +31,7 @@ def retrieve_and_process_csv():
 
                 # Now, 'df' contains the CSV data, and you can use it for processing
                 print(df.columns)
+                df = df[df['Country'] == 'USA']
 
                 # Example: Display the first few rows of the DataFrame
                 return df

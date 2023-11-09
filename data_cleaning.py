@@ -53,10 +53,20 @@ def apply_business_rules(df):
 
     return df
 
+
 '''Scratch Pad'''
 # df = retrieve_and_process_csv()
-#
-#
+# df_grouped = df.groupby('Name').agg(squat = ('Best3SquatKg', 'max'),
+#                                                  bench = ('Best3BenchKg', 'max'),
+#                                                  deadlift = ('Best3DeadliftKg', 'max'),
+#                                                  wilks = ('Wilks', 'max')
+#                                                  ).reset_index()
+
+#print(df_grouped)
+# df = retrieve_and_process_csv()
+# df_country_cnt =df['Country'].value_counts()
+# df_county_na = df[df['Country'].isna()]
+# len(df)
 #
 # remove_special_chars(df)
 # df = convert_kg_to_lbs(df)

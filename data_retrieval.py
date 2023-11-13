@@ -33,6 +33,7 @@ def retrieve_and_process_csv():
                 print(df.columns)
                 df = df[df['Country'] == 'USA']
 
+
                 # Example: Display the first few rows of the DataFrame
                 return df
             else:

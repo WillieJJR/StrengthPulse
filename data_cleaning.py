@@ -33,6 +33,7 @@ def apply_business_rules(df):
 
     if 'Date' in df.columns:
         df['Date'] = pd.to_datetime(df['Date'])
+        df = df[df['Date'].dt.year >= 2013] #will make this more dynamic later
     else:
         raise ValueError('There is no column Date')
 
@@ -56,6 +57,14 @@ def apply_business_rules(df):
 
 '''Scratch Pad'''
 # df = retrieve_and_process_csv()
+# df['Date'] = pd.to_datetime(df['Date'])
+# df = df[df['Date'].dt.year >= 2013]
+# # df_weight_match = df[(df['Federation'] == 'IPF') & (df['Sex'] == 'M') & (df['Date'].dt.year >= 2013)]
+# #
+# # closest_lower_weight_class = df_weight_match.loc[
+# #     (df_weight_match['BodyweightKg'] - 72).abs().idxmin(),
+# #     'WeightClassKg'
+# # ]
 # df_grouped = df.groupby('Name').agg(squat = ('Best3SquatKg', 'max'),
 #                                                  bench = ('Best3BenchKg', 'max'),
 #                                                  deadlift = ('Best3DeadliftKg', 'max'),

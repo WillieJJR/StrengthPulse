@@ -6,6 +6,7 @@ from dash import dash_table
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
+from scipy.stats import percentileofscore
 from data_retrieval import retrieve_and_process_csv
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules
 
@@ -16,12 +17,11 @@ def kpi_one():
             dbc.CardBody([
                 html.Div([
                     html.H4("Your Squat is better than:"),
-                    html.Div(id='output_missing_vals'),
+                    html.Div(id = 'squat_vals'),
                 ], style={'textAlign': 'center'})
             ])
         ),
     ])
-
 
 def kpi_two():
     return html.Div([
@@ -29,12 +29,11 @@ def kpi_two():
             dbc.CardBody([
                 html.Div([
                     html.H4("Your Bench Press is better than:"),
-                    html.Div(id='output_distinct_vals'),
+                    html.Div(id = 'bench_vals'),
                 ], style={'textAlign': 'center'})
             ])
         ),
     ])
-
 
 def kpi_three():
     return html.Div([
@@ -42,18 +41,18 @@ def kpi_three():
             dbc.CardBody([
                 html.Div([
                     html.H4("Your Deadlift is better than:"),
-                    html.Div(id='output_column_type'),
+                    html.Div(id = 'deadlift_vals'),
                 ], style={'textAlign': 'center'})
             ])
         ),
     ])
-
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR], suppress_callback_exceptions=True)
 
 # Define colors
 text_color = '#ffffff'
 link_color = '#007bff'
+
 
 app.layout = html.Div(children=[
     html.H1("StrengthPulse", style={'textAlign': 'center', 'color': text_color}),
@@ -72,15 +71,13 @@ df = retrieve_and_process_csv()
 remove_special_chars(df)
 df = convert_kg_to_lbs(df)
 df = apply_business_rules(df)
-user_data = []
-
+user_data = {}
 
 def render_comp_data():
     return html.Div([
         html.H3(f'Most recent competition data as of {datetime.now().date()} ', style={'color': text_color}),
-        html.P(
-            'This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
-            style={'color': text_color}),
+        html.P('This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
+               style={'color': text_color}),
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
         dcc.Dropdown(
             id='weightclass-filter',
@@ -106,7 +103,7 @@ def render_comp_data():
             style={'background-color': 'transparent', 'margin-bottom': '10px'}
         ),
         html.Button('Load Data', id='load-data-button'),
-        # '''Implement UI for a kg vs lb button here'''
+        #'''Implement UI for a kg vs lb button here'''
         dcc.Loading(id="loading", type="default", children=[html.Div(id='data-table-container')]),
     ])
 
@@ -154,7 +151,9 @@ def render_user_stats():
                 dbc.CardBody([
                     dbc.Row([
                         dbc.Col([
-                            kpi_one()
+                            kpi_one(),
+                            squat_gauge()
+
                         ], width=4),
                         dbc.Col([
                             kpi_two()
@@ -162,7 +161,7 @@ def render_user_stats():
                         dbc.Col([
                             kpi_three()
                         ], width=4),
-                    ], align='center')
+                    ], align='center'),
                 ])
             ], className='mb-2', style={
                 'backgroundColor': 'rgba(0,0,0,0)',
@@ -193,7 +192,6 @@ def render_content(active_tab):
     else:
         return html.Div([])
 
-
 @app.callback(
     Output('data-table-container', 'children'),
     Input('load-data-button', 'n_clicks'),
@@ -203,23 +201,22 @@ def render_content(active_tab):
 )
 def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, selected_sex):
     if n_clicks:
+
         # Filter the data based on selections
-        filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (
-                    df['Sex'] == selected_sex)]
+        filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (df['Sex'] == selected_sex)]
         # Populate the filtered data in the DataTable
-        return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns],
-                                    page_size=10,
+        return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size= 10,
                                     style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
                                     style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'})
 
     # Initially, return an empty div
     return html.Div()
 
-
 @app.callback(
     Output('lbs-button', 'style'),
     Input('lbs-button', 'n_clicks')
 )
+
 def update_kg_lb_button(n_clicks):
     if n_clicks and n_clicks % 2 == 0:
         lbs_button_style = {
@@ -242,43 +239,14 @@ def update_kg_lb_button(n_clicks):
 
     return lbs_button_style
 
-
-# Define callback to add user data to the list
+#Define callback to add user data to the list
 @app.callback(
-    Output('name-input', 'value'),
-    Output('age-input', 'value'),
-    Output('weight-input', 'value'),
-    Output('squat-input', 'value'),
-    Output('bench-input', 'value'),
-    Output('deadlift-input', 'value'),
-    Input('add-data-button', 'n_clicks'),
-    State('name-input', 'value'),
-    State('age-input', 'value'),
-    State('weight-input', 'value'),
-    State('squat-input', 'value'),
-    State('bench-input', 'value'),
-    State('deadlift-input', 'value'),
-)
-def add_user_data(n_clicks, name, age, weight, squat, bench, deadlift):
-    if n_clicks:
-        if name and age and weight:
-            user_data.append(
-                {'Name': name, 'Age': age, 'BodyweightKg': weight, 'Best3SquatKg': squat, 'Best3BenchKg': bench,
-                 'Best3DeadliftKg': deadlift})
-            print(user_data)
-            # return f"User Data: {user_data}", '', ''
-
-        else:
-            return "Please enter both name and age", name, age
-    return '', '', '', '', '', ''
-
-
-# Define callback to merge user data into the existing DataFrame
-@app.callback(
-    Output('merged-data-table', 'children'),
-    Input('add-data-button', 'n_clicks'),
+    Output('squat_vals', 'children'),
+    Output('bench_vals', 'children'),
+    Output('deadlift_vals', 'children'),
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
+    Input('add-data-button', 'n_clicks'),
     State('name-input', 'value'),
     State('age-input', 'value'),
     State('weight-input', 'value'),
@@ -286,16 +254,19 @@ def add_user_data(n_clicks, name, age, weight, squat, bench, deadlift):
     State('bench-input', 'value'),
     State('deadlift-input', 'value'),
 )
-def merge_data(n_clicks, federation, sex, name, age, weight):
+def add_user_data(federation, sex, n_clicks, name, age, weight, squat, bench, deadlift):
     if n_clicks:
-        print('check click')
-        df_weight_match = df[df['Federation'].isin(federation) & (df['Sex'] == sex)]
-        closest_lower_weight_class = df_weight_match.loc[
-            (df_weight_match['BodyweightKg'] - 72).abs().idxmin(),
-            'WeightClassKg'
-        ]
-
         if name and age and weight:
+            user_data.update(
+                {'Name': name, 'Age': age, 'BodyweightKg': weight, 'Best3SquatKg': squat, 'Best3BenchKg': bench,
+                 'Best3DeadliftKg': deadlift})
+
+            df_weight_match = df[df['Federation'].isin(federation) & (df['Sex'] == sex)]
+            closest_lower_weight_class = df_weight_match.loc[
+                (df_weight_match['BodyweightKg'] - user_data['BodyweightKg']).abs().idxmin(),
+                'WeightClassKg'
+            ]
+
             filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
                         df['WeightClassKg'] == closest_lower_weight_class)]
             df_grouped = filtered_df.groupby('Name').agg(squat=('Best3SquatKg', 'max'),
@@ -303,7 +274,32 @@ def merge_data(n_clicks, federation, sex, name, age, weight):
                                                          deadlift=('Best3DeadliftKg', 'max'),
                                                          wilks=('Wilks', 'max')
                                                          ).reset_index()
-            print(df_grouped)
+
+            if squat:
+                df_grouped['squat'] = df_grouped['squat'].fillna(0)
+                squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
+
+
+            if bench:
+                df_grouped['bench'] = df_grouped['bench'].fillna(0)
+                bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
+
+            if deadlift:
+                df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
+                deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
+
+
+            return squat_perc, bench_perc, deadlift_perc
+
+
+
+            #print(user_data)
+            #return f"User Data: {user_data}", '', ''
+
+        else:
+            return "Please enter both name and age", name, age
+    return '', '', ''
+
 
 
 if __name__ == '__main__':

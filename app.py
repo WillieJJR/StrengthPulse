@@ -29,7 +29,7 @@ def kpi_two():
             dbc.CardBody([
                 html.Div([
                     html.H4("Your Bench Press is better than:"),
-                    html.Div(id = 'output_distinct_vals'),
+                    html.Div(id = 'bench_vals'),
                 ], style={'textAlign': 'center'})
             ])
         ),
@@ -41,7 +41,7 @@ def kpi_three():
             dbc.CardBody([
                 html.Div([
                     html.H4("Your Deadlift is better than:"),
-                    html.Div(id = 'output_column_type'),
+                    html.Div(id = 'deadlift_vals'),
                 ], style={'textAlign': 'center'})
             ])
         ),
@@ -52,6 +52,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR], suppress_call
 # Define colors
 text_color = '#ffffff'
 link_color = '#007bff'
+
 
 app.layout = html.Div(children=[
     html.H1("StrengthPulse", style={'textAlign': 'center', 'color': text_color}),
@@ -150,7 +151,7 @@ def render_user_stats():
                 dbc.CardBody([
                     dbc.Row([
                         dbc.Col([
-                            kpi_one()
+                            kpi_one(),
                         ], width=4),
                         dbc.Col([
                             kpi_two()
@@ -158,7 +159,7 @@ def render_user_stats():
                         dbc.Col([
                             kpi_three()
                         ], width=4),
-                    ], align='center')
+                    ], align='center'),
                 ])
             ], className='mb-2', style={
                 'backgroundColor': 'rgba(0,0,0,0)',
@@ -239,6 +240,8 @@ def update_kg_lb_button(n_clicks):
 #Define callback to add user data to the list
 @app.callback(
     Output('squat_vals', 'children'),
+    Output('bench_vals', 'children'),
+    Output('deadlift_vals', 'children'),
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
     Input('add-data-button', 'n_clicks'),
@@ -275,9 +278,17 @@ def add_user_data(federation, sex, n_clicks, name, age, weight, squat, bench, de
                 squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
 
 
-                return squat_perc
+            if bench:
+                df_grouped['bench'] = df_grouped['bench'].fillna(0)
+                bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
 
-            #need to add bench calculation
+            if deadlift:
+                df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
+                deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
+
+
+            return squat_perc, bench_perc, deadlift_perc
+
 
 
             #print(user_data)
@@ -285,7 +296,7 @@ def add_user_data(federation, sex, n_clicks, name, age, weight, squat, bench, de
 
         else:
             return "Please enter both name and age", name, age
-    return '', '', '', '', '', ''
+    return '', '', ''
 
 
 

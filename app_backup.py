@@ -3,6 +3,7 @@ import dash
 from dash import dcc
 from dash import html
 from dash import dash_table
+import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
@@ -72,6 +73,7 @@ remove_special_chars(df)
 df = convert_kg_to_lbs(df)
 df = apply_business_rules(df)
 user_data = {}
+user_data_perc = {}
 
 def render_comp_data():
     return html.Div([
@@ -152,11 +154,39 @@ def render_user_stats():
                     dbc.Row([
                         dbc.Col([
                             kpi_one(),
-                            squat_gauge()
-
+                            html.Div(style={'height': '0.2in'}),
+                            dcc.Graph(
+                                id='squat_indicator_chart',
+                                figure=go.Figure(go.Indicator(
+                                    mode="gauge+number",
+                                    value=0,  # Initial value, it will be updated dynamically
+                                    domain={'x': [0, 1], 'y': [0, 1]},
+                                    title={'text': "Squat"},
+                                    gauge=dict(
+                                        axis=dict(range=[0, 100]),  # Assuming percentiles from 0 to 100
+                                        bar=dict(color="blue"),
+                                    )
+                                )),
+                                style={'display': 'none'}
+                            ),
                         ], width=4),
                         dbc.Col([
-                            kpi_two()
+                            kpi_two(),
+                            html.Div(style={'height': '0.2in'}),
+                            dcc.Graph(
+                                id='bench_indicator_chart',
+                                figure=go.Figure(go.Indicator(
+                                    mode="gauge+number",
+                                    value=0,  # Initial value, it will be updated dynamically
+                                    domain={'x': [0, 1], 'y': [0, 1]},
+                                    title={'text': "Squat"},
+                                    gauge=dict(
+                                        axis=dict(range=[0, 100]),  # Assuming percentiles from 0 to 100
+                                        bar=dict(color="blue"),
+                                    )
+                                )),
+                                style={'display': 'none'}
+                            ),
                         ], width=4),
                         dbc.Col([
                             kpi_three()
@@ -278,11 +308,15 @@ def add_user_data(federation, sex, n_clicks, name, age, weight, squat, bench, de
             if squat:
                 df_grouped['squat'] = df_grouped['squat'].fillna(0)
                 squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
+                squat_perc_val = squat_perc
+                user_data_perc.update({'squat_perc': squat_perc_val})
 
 
             if bench:
                 df_grouped['bench'] = df_grouped['bench'].fillna(0)
                 bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
+                bench_perc_val = squat_perc
+                user_data_perc.update({'bench_perc': bench_perc_val})
 
             if deadlift:
                 df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
@@ -299,6 +333,56 @@ def add_user_data(federation, sex, n_clicks, name, age, weight, squat, bench, de
         else:
             return "Please enter both name and age", name, age
     return '', '', ''
+
+
+
+# Callback to update the gauge chart
+@app.callback(
+    [Output('squat_indicator_chart', 'figure'),
+     Output('squat_indicator_chart', 'style')],
+    [Input('add-data-button', 'n_clicks')],
+    [Input('squat_vals', 'children')]  # Assuming 'squat-input' is the input for the squat value
+)
+def update_squat_chart(n_clicks, squat_vals):
+    if n_clicks is None:
+        # If the button is not clicked yet, keep the chart hidden
+        return go.Figure(), {'display': 'none'}
+
+    squat_percentile = user_data_perc.get('squat_perc', 0)
+    bench_percentile = user_data_perc.get('bench_perc', 0)
+    print(squat_percentile)
+
+    if squat_percentile:
+        # Update the gauge chart with the calculated value
+        squat_figure = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=squat_percentile,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': "Squat", 'font': {'color': 'white'}},
+            gauge=dict(
+                axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
+                bar=dict(color="red"),
+                bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
+            ),
+            number={'font': {'color': 'white'}}
+        ))
+
+        squat_figure.update_layout(
+            plot_bgcolor='rgba(0, 0, 0, 0)',  # Fully transparent background
+            paper_bgcolor='rgba(0, 0, 0, 0)'  # Fully transparent plot area background
+        )
+
+        # Show the chart by updating the style property
+        squat_style = {'display': 'block'}
+
+        return squat_figure, squat_style
+
+    else:
+        # If squat_percentile is None or 0, you may want to handle this case
+        return go.Figure(), {'display': 'none'}
+
+
+
 
 
 

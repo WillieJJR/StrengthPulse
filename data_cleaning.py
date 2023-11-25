@@ -40,6 +40,9 @@ def apply_business_rules(df):
     if 'WeightClassKg' in df.columns:
         df = df.dropna(subset=['WeightClassKg'])
 
+    if 'Tested' in df.columns:
+        df['Tested'] = df['Tested'].apply(lambda x: 'Not Known' if x != 'Yes' else x)
+
 
     if all(col in df.columns for col in ['BirthYearClass', 'AgeClass', 'Age']):
         mask = df['AgeClass'].isna() & ~df['BirthYearClass'].isna()
@@ -57,6 +60,16 @@ def apply_business_rules(df):
 
 '''Scratch Pad'''
 # df = retrieve_and_process_csv()
+# fed_df = df['Federation'].value_counts()
+# fed_p = df['ParentFederation'].value_counts()
+# equip = df['Equipment'].value_counts()
+# non_tested = df[df['Tested'] != 'Yes']
+# federations_with_nan_and_yes = df.groupby('Federation')['Tested'].apply(lambda x: x.isna().any() and 'Yes' in x.values)
+
+# fed_df_raw = df[df['Federation'] == 'RAW']
+# print(fed_df_raw['WeightClassKg'].value_counts())
+# df_new = df
+# df_new['Tested'] = df_new['Tested'].apply(lambda x: 'Not Known' if x != 'Yes' else x)
 # df['Date'] = pd.to_datetime(df['Date'])
 # df = df[df['Date'].dt.year >= 2013]
 # # df_weight_match = df[(df['Federation'] == 'IPF') & (df['Sex'] == 'M') & (df['Date'].dt.year >= 2013)]

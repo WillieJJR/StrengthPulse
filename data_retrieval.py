@@ -30,7 +30,6 @@ def retrieve_and_process_csv():
                     df = pd.read_csv(file)
 
                 # Now, 'df' contains the CSV data, and you can use it for processing
-                print(df.columns)
                 df = df[df['Country'] == 'USA']
 
 

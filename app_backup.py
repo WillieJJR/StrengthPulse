@@ -82,6 +82,13 @@ def render_comp_data():
                style={'color': text_color}),
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
         dcc.Dropdown(
+            id='federation-dropdown-filter',
+            options=[{'label': federation, 'value': federation} for federation in df['Federation'].unique()],
+            multi=True,
+            placeholder='Select Federation...',
+            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
+        ),
+        dcc.Dropdown(
             id='weightclass-filter',
             options=[{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()],
             multi=True,
@@ -116,13 +123,6 @@ def render_user_stats():
         html.P('This tab provides an explanation of the predictive model and its methodology.',
                style={'color': text_color}),
 
-        # dcc.Dropdown(
-        #     id='country-filter',
-        #     options=[{'label': Country, 'value': Country} for Country in df['Country'].unique()],
-        #     multi=True,
-        #     placeholder='Select Country...',
-        #     style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        # ), #need to fix the countries where null values exist (maybe filter only to usa?)
         dcc.Dropdown(
             id='federation-filter',
             options=[{'label': Federation, 'value': Federation} for Federation in df['Federation'].unique() if
@@ -139,6 +139,13 @@ def render_user_stats():
             labelStyle={'display': 'inline', 'margin-right': '10px'},
             style={'background-color': 'transparent', 'margin-bottom': '10px'}
         ),
+        html.Button('Tested', id='tested-button', n_clicks=0),
+        # dcc.RadioItems(
+        #     id='tested-filter',
+        #     options=[{'label': 'Tested', 'value': 'Yes'}, {'label': 'Not Known', 'value': 'Not Known'}],
+        #     labelStyle={'display': 'inline', 'margin-right': '10px'},
+        #     style={'background-color': 'transparent', 'margin-left': '4in'}  # Adjust margin-left for separation
+        # ),
 
         dcc.Input(id='name-input', type='text', placeholder='Enter Name'),
         dcc.Input(id='age-input', type='number', placeholder='Enter Age'),
@@ -179,7 +186,7 @@ def render_user_stats():
                                     mode="gauge+number",
                                     value=0,  # Initial value, it will be updated dynamically
                                     domain={'x': [0, 1], 'y': [0, 1]},
-                                    title={'text': "Squat"},
+                                    title={'text': "Bench"},
                                     gauge=dict(
                                         axis=dict(range=[0, 100]),  # Assuming percentiles from 0 to 100
                                         bar=dict(color="blue"),
@@ -189,7 +196,22 @@ def render_user_stats():
                             ),
                         ], width=4),
                         dbc.Col([
-                            kpi_three()
+                            kpi_three(),
+                            html.Div(style={'height': '0.2in'}),
+                            dcc.Graph(
+                                id='deadlift_indicator_chart',
+                                figure=go.Figure(go.Indicator(
+                                    mode="gauge+number",
+                                    value=0,  # Initial value, it will be updated dynamically
+                                    domain={'x': [0, 1], 'y': [0, 1]},
+                                    title={'text': "Deadlift"},
+                                    gauge=dict(
+                                        axis=dict(range=[0, 100]),  # Assuming percentiles from 0 to 100
+                                        bar=dict(color="blue"),
+                                    )
+                                )),
+                                style={'display': 'none'}
+                            )
                         ], width=4),
                     ], align='center'),
                 ])
@@ -223,21 +245,49 @@ def render_content(active_tab):
         return html.Div([])
 
 @app.callback(
+    [Output('weightclass-filter', 'options'),
+     Output('ageclass-filter', 'options')],
+    [Input('federation-dropdown-filter', 'value')]
+)
+def update_dropdown_options(selected_federation):
+    if selected_federation is None:
+        # If no federation is selected, return all options for weightclass and ageclass
+        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()]
+        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in df['AgeClass'].unique() if ageClass is not None]
+    else:
+        # Filter options based on the selected federation
+        subset_df = df[df['Federation'].isin(selected_federation)]
+        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in subset_df['WeightClassKg'].unique()]
+        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in subset_df['AgeClass'].unique() if ageClass is not None]
+
+    return weightclass_options, ageclass_options
+
+@app.callback(
     Output('data-table-container', 'children'),
     Input('load-data-button', 'n_clicks'),
     State('weightclass-filter', 'value'),
     State('ageclass-filter', 'value'),
-    State('sex-filter', 'value')
+    State('sex-filter', 'value'),
+    State('federation-dropdown-filter', 'value')
 )
-def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, selected_sex):
+def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, selected_sex, selected_federation):
     if n_clicks:
+        print("Selected Weight Classes:", selected_weightclasses)
+        print("Selected Age Classes:", selected_ageclasses)
+        print("Selected Sex:", selected_sex)
+        print("Selected Federation:", selected_federation)
 
-        # Filter the data based on selections
-        filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (df['Sex'] == selected_sex)]
-        # Populate the filtered data in the DataTable
-        return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size= 10,
-                                    style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
-                                    style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'})
+        if selected_weightclasses is not None and selected_ageclasses is not None and selected_sex is not None and selected_federation is not None:
+            # Filter the data based on selections
+            filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (df['Sex'] == selected_sex) & df['Federation'].isin(selected_federation)]
+
+            # Print the length of the filtered DataFrame
+            print("Filtered DataFrame Length:", len(filtered_df))
+
+            # Populate the filtered data in the DataTable
+            return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size=10,
+                                        style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
+                                        style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'})
 
     # Initially, return an empty div
     return html.Div()
@@ -269,11 +319,38 @@ def update_kg_lb_button(n_clicks):
 
     return lbs_button_style
 
+@app.callback(
+    Output('tested-button', 'style'),
+    Input('tested-button', 'n_clicks')
+)
+def update_tested_button(n_clicks):
+    if n_clicks and n_clicks % 2 == 0:
+        tested_button_style = {
+            'borderRadius': '12px',
+            'background-color': 'rgba(255, 0, 0, 0.5)',
+            'color': 'white',
+            'height': '30px',  # set the height of the buttons
+            'width': '90px',  # set the width of the buttons
+        }
+        print('on')
+    else:
+        tested_button_style = {
+            'borderRadius': '12px',
+            'background-color': 'rgba(211, 211, 211, 0.5)',
+            'color': 'white',
+            'height': '30px',  # set the height of the buttons
+            'width': '90px',  # set the width of the buttons
+        }
+        print('off')
+
+    return tested_button_style
+
 #Define callback to add user data to the list
 @app.callback(
     Output('squat_vals', 'children'),
     Output('bench_vals', 'children'),
     Output('deadlift_vals', 'children'),
+    Input('tested-button', 'n_clicks'),
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
     Input('add-data-button', 'n_clicks'),
@@ -284,21 +361,43 @@ def update_kg_lb_button(n_clicks):
     State('bench-input', 'value'),
     State('deadlift-input', 'value'),
 )
-def add_user_data(federation, sex, n_clicks, name, age, weight, squat, bench, deadlift):
+def add_user_data(tested, federation, sex, n_clicks, name, age, weight, squat, bench, deadlift):
     if n_clicks:
-        if name and age and weight:
+        if name and age and weight and federation:
             user_data.update(
                 {'Name': name, 'Age': age, 'BodyweightKg': weight, 'Best3SquatKg': squat, 'Best3BenchKg': bench,
                  'Best3DeadliftKg': deadlift})
 
-            df_weight_match = df[df['Federation'].isin(federation) & (df['Sex'] == sex)]
-            closest_lower_weight_class = df_weight_match.loc[
-                (df_weight_match['BodyweightKg'] - user_data['BodyweightKg']).abs().idxmin(),
-                'WeightClassKg'
-            ]
+            # federation_dict = {}
+            # for federation in df['Federation'].unique():
+            #     contains_both_values = df[df['Federation'] == federation]['Tested'].isin(
+            #         ['Not Known', 'Yes']).all()
+            #     federation_dict[federation] = contains_both_values
 
-            filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
-                        df['WeightClassKg'] == closest_lower_weight_class)]
+            if tested % 2 == 0: # and federation_dict[federation] == True:
+                print('has both tested and non tested lifters')
+
+                df_weight_match = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (df['Tested'] == 'Yes')]
+                closest_lower_weight_class = df_weight_match.loc[
+                    (df_weight_match['BodyweightKg'] - user_data['BodyweightKg']).abs().idxmin(),
+                    'WeightClassKg'
+                ]
+
+                filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
+                            df['WeightClassKg'] == closest_lower_weight_class) & (df['Tested'] == 'Yes')]
+
+            else:
+
+                df_weight_match = df[df['Federation'].isin(federation) & (df['Sex'] == sex)]
+                closest_lower_weight_class = df_weight_match.loc[
+                    (df_weight_match['BodyweightKg'] - user_data['BodyweightKg']).abs().idxmin(),
+                    'WeightClassKg'
+                ]
+
+                filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
+                            df['WeightClassKg'] == closest_lower_weight_class)]
+
+
             df_grouped = filtered_df.groupby('Name').agg(squat=('Best3SquatKg', 'max'),
                                                          bench=('Best3BenchKg', 'max'),
                                                          deadlift=('Best3DeadliftKg', 'max'),
@@ -315,20 +414,18 @@ def add_user_data(federation, sex, n_clicks, name, age, weight, squat, bench, de
             if bench:
                 df_grouped['bench'] = df_grouped['bench'].fillna(0)
                 bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
-                bench_perc_val = squat_perc
+                bench_perc_val = bench_perc
                 user_data_perc.update({'bench_perc': bench_perc_val})
 
             if deadlift:
                 df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
                 deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
+                deadlift_perc_val = deadlift_perc
+                user_data_perc.update({'deadlift_perc': deadlift_perc_val})
 
 
             return squat_perc, bench_perc, deadlift_perc
 
-
-
-            #print(user_data)
-            #return f"User Data: {user_data}", '', ''
 
         else:
             return "Please enter both name and age", name, age
@@ -349,7 +446,6 @@ def update_squat_chart(n_clicks, squat_vals):
         return go.Figure(), {'display': 'none'}
 
     squat_percentile = user_data_perc.get('squat_perc', 0)
-    bench_percentile = user_data_perc.get('bench_perc', 0)
     print(squat_percentile)
 
     if squat_percentile:
@@ -364,7 +460,7 @@ def update_squat_chart(n_clicks, squat_vals):
                 bar=dict(color="red"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
-            number={'font': {'color': 'white'}}
+            number={'font': {'color': 'white'}, 'suffix':"%"}
         ))
 
         squat_figure.update_layout(
@@ -383,7 +479,94 @@ def update_squat_chart(n_clicks, squat_vals):
 
 
 
+@app.callback(
+    [Output('bench_indicator_chart', 'figure'),
+     Output('bench_indicator_chart', 'style')],
+    [Input('add-data-button', 'n_clicks')],
+    [Input('bench_vals', 'children')]  # Assuming 'squat-input' is the input for the squat value
+)
+def update_bench_chart(n_clicks, squat_vals):
+    if n_clicks is None:
+        # If the button is not clicked yet, keep the chart hidden
+        return go.Figure(), {'display': 'none'}
 
+
+    bench_percentile = user_data_perc.get('bench_perc', 0)
+    print(bench_percentile)
+
+    if bench_percentile:
+        # Update the gauge chart with the calculated value
+        bench_figure = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=bench_percentile,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': "Bench", 'font': {'color': 'white'}},
+            gauge=dict(
+                axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
+                bar=dict(color="red"),
+                bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
+            ),
+            number={'font': {'color': 'white'}, 'suffix':"%"}
+        ))
+
+        bench_figure.update_layout(
+            plot_bgcolor='rgba(0, 0, 0, 0)',  # Fully transparent background
+            paper_bgcolor='rgba(0, 0, 0, 0)'  # Fully transparent plot area background
+        )
+
+        # Show the chart by updating the style property
+        bench_style = {'display': 'block'}
+
+        return bench_figure, bench_style
+
+    else:
+        # If squat_percentile is None or 0, you may want to handle this case
+        return go.Figure(), {'display': 'none'}
+
+
+@app.callback(
+    [Output('deadlift_indicator_chart', 'figure'),
+     Output('deadlift_indicator_chart', 'style')],
+    [Input('add-data-button', 'n_clicks')],
+    [Input('deadlift_vals', 'children')]  # Assuming 'squat-input' is the input for the squat value
+)
+def update_deadlift_chart(n_clicks, squat_vals):
+    if n_clicks is None:
+        # If the button is not clicked yet, keep the chart hidden
+        return go.Figure(), {'display': 'none'}
+
+
+    deadlift_percentile = user_data_perc.get('deadlift_perc', 0)
+    print(deadlift_percentile)
+
+    if deadlift_percentile:
+        # Update the gauge chart with the calculated value
+        deadlift_figure = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=deadlift_percentile,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': "Deadlift", 'font': {'color': 'white'}},
+            gauge=dict(
+                axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
+                bar=dict(color="red"),
+                bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
+            ),
+            number={'font': {'color': 'white'}, 'suffix':"%"}
+        ))
+
+        deadlift_figure.update_layout(
+            plot_bgcolor='rgba(0, 0, 0, 0)',  # Fully transparent background
+            paper_bgcolor='rgba(0, 0, 0, 0)'  # Fully transparent plot area background
+        )
+
+        # Show the chart by updating the style property
+        deadlift_style = {'display': 'block'}
+
+        return deadlift_figure, deadlift_style
+
+    else:
+        # If squat_percentile is None or 0, you may want to handle this case
+        return go.Figure(), {'display': 'none'}
 
 
 if __name__ == '__main__':

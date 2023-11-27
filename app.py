@@ -82,6 +82,13 @@ def render_comp_data():
                style={'color': text_color}),
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
         dcc.Dropdown(
+            id='federation-dropdown-filter',
+            options=[{'label': federation, 'value': federation} for federation in df['Federation'].unique()],
+            multi=True,
+            placeholder='Select Federation...',
+            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
+        ),
+        dcc.Dropdown(
             id='weightclass-filter',
             options=[{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()],
             multi=True,
@@ -238,21 +245,49 @@ def render_content(active_tab):
         return html.Div([])
 
 @app.callback(
+    [Output('weightclass-filter', 'options'),
+     Output('ageclass-filter', 'options')],
+    [Input('federation-dropdown-filter', 'value')]
+)
+def update_dropdown_options(selected_federation):
+    if selected_federation is None:
+        # If no federation is selected, return all options for weightclass and ageclass
+        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()]
+        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in df['AgeClass'].unique() if ageClass is not None]
+    else:
+        # Filter options based on the selected federation
+        subset_df = df[df['Federation'].isin(selected_federation)]
+        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in subset_df['WeightClassKg'].unique()]
+        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in subset_df['AgeClass'].unique() if ageClass is not None]
+
+    return weightclass_options, ageclass_options
+
+@app.callback(
     Output('data-table-container', 'children'),
     Input('load-data-button', 'n_clicks'),
     State('weightclass-filter', 'value'),
     State('ageclass-filter', 'value'),
-    State('sex-filter', 'value')
+    State('sex-filter', 'value'),
+    State('federation-dropdown-filter', 'value')
 )
-def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, selected_sex):
+def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, selected_sex, selected_federation):
     if n_clicks:
+        print("Selected Weight Classes:", selected_weightclasses)
+        print("Selected Age Classes:", selected_ageclasses)
+        print("Selected Sex:", selected_sex)
+        print("Selected Federation:", selected_federation)
 
-        # Filter the data based on selections
-        filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (df['Sex'] == selected_sex)]
-        # Populate the filtered data in the DataTable
-        return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size= 10,
-                                    style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
-                                    style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'})
+        if selected_weightclasses is not None and selected_ageclasses is not None and selected_sex is not None and selected_federation is not None:
+            # Filter the data based on selections
+            filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (df['Sex'] == selected_sex) & df['Federation'].isin(selected_federation)]
+
+            # Print the length of the filtered DataFrame
+            print("Filtered DataFrame Length:", len(filtered_df))
+
+            # Populate the filtered data in the DataTable
+            return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size=10,
+                                        style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
+                                        style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'})
 
     # Initially, return an empty div
     return html.Div()
@@ -319,6 +354,7 @@ def update_tested_button(n_clicks):
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
     Input('add-data-button', 'n_clicks'),
+    Input('lbs-button', 'n_clicks'),
     State('name-input', 'value'),
     State('age-input', 'value'),
     State('weight-input', 'value'),
@@ -326,12 +362,19 @@ def update_tested_button(n_clicks):
     State('bench-input', 'value'),
     State('deadlift-input', 'value'),
 )
-def add_user_data(tested, federation, sex, n_clicks, name, age, weight, squat, bench, deadlift):
+def add_user_data(tested, federation, sex, n_clicks, lbs_n_clicks, name, age, weight, squat, bench, deadlift):
     if n_clicks:
         if name and age and weight and federation:
-            user_data.update(
-                {'Name': name, 'Age': age, 'BodyweightKg': weight, 'Best3SquatKg': squat, 'Best3BenchKg': bench,
-                 'Best3DeadliftKg': deadlift})
+            if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+
+                user_data.update(
+                    {'Name': name, 'Age': age, 'BodyweightKg': weight/float(2.2), 'Best3SquatKg': squat, 'Best3BenchKg': bench,
+                     'Best3DeadliftKg': deadlift})
+            else:
+
+                user_data.update(
+                    {'Name': name, 'Age': age, 'BodyweightKg': weight, 'Best3SquatKg': squat, 'Best3BenchKg': bench,
+                     'Best3DeadliftKg': deadlift})
 
             # federation_dict = {}
             # for federation in df['Federation'].unique():
@@ -347,6 +390,7 @@ def add_user_data(tested, federation, sex, n_clicks, name, age, weight, squat, b
                     (df_weight_match['BodyweightKg'] - user_data['BodyweightKg']).abs().idxmin(),
                     'WeightClassKg'
                 ]
+                print(closest_lower_weight_class)
 
                 filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
                             df['WeightClassKg'] == closest_lower_weight_class) & (df['Tested'] == 'Yes')]
@@ -370,23 +414,41 @@ def add_user_data(tested, federation, sex, n_clicks, name, age, weight, squat, b
                                                          ).reset_index()
 
             if squat:
-                df_grouped['squat'] = df_grouped['squat'].fillna(0)
-                squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
-                squat_perc_val = squat_perc
-                user_data_perc.update({'squat_perc': squat_perc_val})
+                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                    df_grouped['squat'] = df_grouped['squat'].fillna(0)
+                    squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg']/float(2.2))
+                    squat_perc_val = squat_perc
+                    user_data_perc.update({'squat_perc': squat_perc_val})
+                else:
+                    df_grouped['squat'] = df_grouped['squat'].fillna(0)
+                    squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
+                    squat_perc_val = squat_perc
+                    user_data_perc.update({'squat_perc': squat_perc_val})
 
 
             if bench:
-                df_grouped['bench'] = df_grouped['bench'].fillna(0)
-                bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
-                bench_perc_val = bench_perc
-                user_data_perc.update({'bench_perc': bench_perc_val})
+                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                    df_grouped['bench'] = df_grouped['bench'].fillna(0)
+                    bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg']/float(2.2))
+                    bench_perc_val = bench_perc
+                    user_data_perc.update({'bench_perc': bench_perc_val})
+                else:
+                    df_grouped['bench'] = df_grouped['bench'].fillna(0)
+                    bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
+                    bench_perc_val = bench_perc
+                    user_data_perc.update({'bench_perc': bench_perc_val})
 
             if deadlift:
-                df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
-                deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
-                deadlift_perc_val = deadlift_perc
-                user_data_perc.update({'deadlift_perc': deadlift_perc_val})
+                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                    df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
+                    deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg']/float(2.2))
+                    deadlift_perc_val = deadlift_perc
+                    user_data_perc.update({'deadlift_perc': deadlift_perc_val})
+                else:
+                    df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
+                    deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
+                    deadlift_perc_val = deadlift_perc
+                    user_data_perc.update({'deadlift_perc': deadlift_perc_val})
 
 
             return squat_perc, bench_perc, deadlift_perc

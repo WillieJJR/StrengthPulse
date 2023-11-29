@@ -367,7 +367,7 @@ def update_tested_button(n_clicks):
     State('bench-input', 'value'),
     State('deadlift-input', 'value'),
 )
-def update_output(tested, federation, sex, n_clicks, lbs_n_clicks, name, age, weight, squat, bench, deadlift):
+def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, name, age, weight, squat, bench, deadlift):
     if n_clicks:
         if name and age and weight and federation:
             if lbs_n_clicks and lbs_n_clicks % 2 == 0:

@@ -60,6 +60,17 @@ def apply_business_rules(df):
 
 '''Scratch Pad'''
 # df = retrieve_and_process_csv()
+#
+# df['Date'] = pd.to_datetime(df['Date'])
+#
+# df_age_match = df[(df['Federation'] == 'IPF') & (df['Sex'] == 'M') & (df['Date'].dt.year >= 2013)]
+#
+# closest_age_class = df_age_match.loc[
+#     (df_age_match['Age'] - 17).abs().idxmin(),
+#     'AgeClass'
+# ]
+
+
 # fed_df = df['Federation'].value_counts()
 # fed_p = df['ParentFederation'].value_counts()
 # equip = df['Equipment'].value_counts()

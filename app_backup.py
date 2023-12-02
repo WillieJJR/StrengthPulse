@@ -74,6 +74,8 @@ df = convert_kg_to_lbs(df)
 df = apply_business_rules(df)
 user_data = {}
 user_data_perc = {}
+estimated_comp_class = {}
+lifter_count = []
 
 def render_comp_data():
     return html.Div([
@@ -122,6 +124,8 @@ def render_user_stats():
         html.H3('Model Overview', style={'color': text_color}),
         html.P('This tab provides an explanation of the predictive model and its methodology.',
                style={'color': text_color}),
+        html.Div(id='output-container', className='callout-container'),
+        html.Div(id='output-container-2', className='callout-container'),
 
         dcc.Dropdown(
             id='federation-filter',
@@ -154,6 +158,7 @@ def render_user_stats():
         dcc.Input(id='bench-input', type='number', placeholder='Competition bench Press'),
         dcc.Input(id='deadlift-input', type='number', placeholder='Competition Deadlift'),
         html.Button('Add Data', id='add-data-button'),
+        html.Div(id='output-container-3', className='callout-container'),
 
         html.Div([
             dbc.Card([
@@ -350,10 +355,14 @@ def update_tested_button(n_clicks):
     Output('squat_vals', 'children'),
     Output('bench_vals', 'children'),
     Output('deadlift_vals', 'children'),
+    Output('output-container', 'children'),
+    Output('output-container-2', 'children'),
+    Output('output-container-3', 'children'),
     Input('tested-button', 'n_clicks'),
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
     Input('add-data-button', 'n_clicks'),
+    Input('lbs-button', 'n_clicks'),
     State('name-input', 'value'),
     State('age-input', 'value'),
     State('weight-input', 'value'),
@@ -361,21 +370,21 @@ def update_tested_button(n_clicks):
     State('bench-input', 'value'),
     State('deadlift-input', 'value'),
 )
-def add_user_data(tested, federation, sex, n_clicks, name, age, weight, squat, bench, deadlift):
+def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, name, age, weight, squat, bench, deadlift):
     if n_clicks:
         if name and age and weight and federation:
-            user_data.update(
-                {'Name': name, 'Age': age, 'BodyweightKg': weight, 'Best3SquatKg': squat, 'Best3BenchKg': bench,
-                 'Best3DeadliftKg': deadlift})
+            if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                user_data.update(
+                    {'Name': name, 'Age': age, 'BodyweightKg': weight / float(2.2), 'Best3SquatKg': squat,
+                     'Best3BenchKg': bench,
+                     'Best3DeadliftKg': deadlift})
+            else:
+                user_data.update(
+                    {'Name': name, 'Age': age, 'BodyweightKg': weight, 'Best3SquatKg': squat, 'Best3BenchKg': bench,
+                     'Best3DeadliftKg': deadlift})
 
-            # federation_dict = {}
-            # for federation in df['Federation'].unique():
-            #     contains_both_values = df[df['Federation'] == federation]['Tested'].isin(
-            #         ['Not Known', 'Yes']).all()
-            #     federation_dict[federation] = contains_both_values
-
-            if tested % 2 == 0: # and federation_dict[federation] == True:
-                print('has both tested and non tested lifters')
+            if tested % 2 == 0:
+                print('has both tested and non-tested lifters')
 
                 df_weight_match = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (df['Tested'] == 'Yes')]
                 closest_lower_weight_class = df_weight_match.loc[
@@ -383,20 +392,49 @@ def add_user_data(tested, federation, sex, n_clicks, name, age, weight, squat, b
                     'WeightClassKg'
                 ]
 
+                closest_age_class = df_weight_match.loc[
+                    (df_weight_match['Age'] - user_data['Age']).abs().idxmin(),
+                    'AgeClass'
+                ]
+
                 filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
-                            df['WeightClassKg'] == closest_lower_weight_class) & (df['Tested'] == 'Yes')]
+                            df['WeightClassKg'] == closest_lower_weight_class) & (df['Tested'] == 'Yes') & (
+                                            df['AgeClass'] == closest_age_class)]
+
+                if len(lifter_count) > 0:
+                    lifter_count.pop()
+                    lifter_count.append(len(filtered_df))
+                else:
+                    lifter_count.append(len(filtered_df))
+
+                print(closest_age_class)
+
+                estimated_comp_class.update({'ageclass': closest_age_class, 'weightclass': closest_lower_weight_class})
 
             else:
-
                 df_weight_match = df[df['Federation'].isin(federation) & (df['Sex'] == sex)]
                 closest_lower_weight_class = df_weight_match.loc[
                     (df_weight_match['BodyweightKg'] - user_data['BodyweightKg']).abs().idxmin(),
                     'WeightClassKg'
                 ]
 
-                filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
-                            df['WeightClassKg'] == closest_lower_weight_class)]
+                closest_age_class = df_weight_match.loc[
+                    (df_weight_match['Age'] - user_data['Age']).abs().idxmin(),
+                    'AgeClass'
+                ]
 
+                filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
+                            df['WeightClassKg'] == closest_lower_weight_class) & (df['AgeClass'] == closest_age_class)]
+
+                if len(lifter_count) > 0:
+                    lifter_count.pop()
+                    lifter_count.append(len(filtered_df))
+                else:
+                    lifter_count.append(len(filtered_df))
+
+                print(closest_age_class)
+
+                estimated_comp_class.update({'ageclass': closest_age_class, 'weightclass': closest_lower_weight_class})
 
             df_grouped = filtered_df.groupby('Name').agg(squat=('Best3SquatKg', 'max'),
                                                          bench=('Best3BenchKg', 'max'),
@@ -404,34 +442,76 @@ def add_user_data(tested, federation, sex, n_clicks, name, age, weight, squat, b
                                                          wilks=('Wilks', 'max')
                                                          ).reset_index()
 
-            if squat:
-                df_grouped['squat'] = df_grouped['squat'].fillna(0)
-                squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
-                squat_perc_val = squat_perc
-                user_data_perc.update({'squat_perc': squat_perc_val})
+            print(lifter_count)
 
+            squat_perc, bench_perc, deadlift_perc = None, None, None
+            if squat:
+                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                    df_grouped['squat'] = df_grouped['squat'].fillna(0)
+                    squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'] / float(2.2))
+                    squat_perc_val = squat_perc
+                    user_data_perc.update({'squat_perc': squat_perc_val})
+                else:
+                    df_grouped['squat'] = df_grouped['squat'].fillna(0)
+                    squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
+                    squat_perc_val = squat_perc
+                    user_data_perc.update({'squat_perc': squat_perc_val})
 
             if bench:
-                df_grouped['bench'] = df_grouped['bench'].fillna(0)
-                bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
-                bench_perc_val = bench_perc
-                user_data_perc.update({'bench_perc': bench_perc_val})
+                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                    df_grouped['bench'] = df_grouped['bench'].fillna(0)
+                    bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'] / float(2.2))
+                    bench_perc_val = bench_perc
+                    user_data_perc.update({'bench_perc': bench_perc_val})
+                else:
+                    df_grouped['bench'] = df_grouped['bench'].fillna(0)
+                    bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
+                    bench_perc_val = bench_perc
+                    user_data_perc.update({'bench_perc': bench_perc_val})
 
             if deadlift:
-                df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
-                deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
-                deadlift_perc_val = deadlift_perc
-                user_data_perc.update({'deadlift_perc': deadlift_perc_val})
+                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                    df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
+                    deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'] / float(2.2))
+                    deadlift_perc_val = deadlift_perc
+                    user_data_perc.update({'deadlift_perc': deadlift_perc_val})
+                else:
+                    df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
+                    deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
+                    deadlift_perc_val = deadlift_perc
+                    user_data_perc.update({'deadlift_perc': deadlift_perc_val})
 
+            if len(federation) == 1:
+                federation = federation[0]
+            else:
+                federation = ', '.join(str(x) for x in federation)
 
-            return squat_perc, bench_perc, deadlift_perc
+            # Logic for updating 'output-container' and 'output-container-2'
+            output1 = [
+                html.Div([
+                    html.H5(f'Current Weight Class in {federation}: {estimated_comp_class.get("weightclass", 0)} Kg',
+                            className='callout-content', style={'color': 'red'})
+                ], className='callout'),
+            ]
+            output2 = [
+                html.Div([
+                    html.H5(f'Current Age Class in {federation}: {estimated_comp_class.get("ageclass", 0)}',
+                            className='callout-content', style={'color': 'red'})
+                ], className='callout'),
+            ]
 
+            output3 = [
+                html.Div([
+                    html.H5(f'Comparison based on performance among {lifter_count[0]} other lifters',
+                            className='callout-content', style={'color': 'red'})
+                ], className='callout'),
+            ]
+
+            return squat_perc, bench_perc, deadlift_perc, output1, output2, output3
 
         else:
-            return "Please enter both name and age", name, age
-    return '', '', ''
-
-
+            return "Please enter both name and age", name, age, '', '', ''
+    return '', '', '', '', '', ''
 
 # Callback to update the gauge chart
 @app.callback(

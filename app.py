@@ -75,6 +75,7 @@ df = apply_business_rules(df)
 user_data = {}
 user_data_perc = {}
 estimated_comp_class = {}
+lifter_count = []
 
 def render_comp_data():
     return html.Div([
@@ -157,6 +158,7 @@ def render_user_stats():
         dcc.Input(id='bench-input', type='number', placeholder='Competition bench Press'),
         dcc.Input(id='deadlift-input', type='number', placeholder='Competition Deadlift'),
         html.Button('Add Data', id='add-data-button'),
+        html.Div(id='output-container-3', className='callout-container'),
 
         html.Div([
             dbc.Card([
@@ -355,6 +357,7 @@ def update_tested_button(n_clicks):
     Output('deadlift_vals', 'children'),
     Output('output-container', 'children'),
     Output('output-container-2', 'children'),
+    Output('output-container-3', 'children'),
     Input('tested-button', 'n_clicks'),
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
@@ -398,6 +401,12 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                             df['WeightClassKg'] == closest_lower_weight_class) & (df['Tested'] == 'Yes') & (
                                             df['AgeClass'] == closest_age_class)]
 
+                if len(lifter_count) > 0:
+                    lifter_count.pop()
+                    lifter_count.append(len(filtered_df))
+                else:
+                    lifter_count.append(len(filtered_df))
+
                 print(closest_age_class)
 
                 estimated_comp_class.update({'ageclass': closest_age_class, 'weightclass': closest_lower_weight_class})
@@ -417,6 +426,14 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 filtered_df = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (
                             df['WeightClassKg'] == closest_lower_weight_class) & (df['AgeClass'] == closest_age_class)]
 
+                if len(lifter_count) > 0:
+                    lifter_count.pop()
+                    lifter_count.append(len(filtered_df))
+                else:
+                    lifter_count.append(len(filtered_df))
+
+                print(closest_age_class)
+
                 estimated_comp_class.update({'ageclass': closest_age_class, 'weightclass': closest_lower_weight_class})
 
             df_grouped = filtered_df.groupby('Name').agg(squat=('Best3SquatKg', 'max'),
@@ -424,6 +441,8 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                                                          deadlift=('Best3DeadliftKg', 'max'),
                                                          wilks=('Wilks', 'max')
                                                          ).reset_index()
+
+            print(lifter_count)
 
             squat_perc, bench_perc, deadlift_perc = None, None, None
             if squat:
@@ -481,11 +500,18 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 ], className='callout'),
             ]
 
-            return squat_perc, bench_perc, deadlift_perc, output1, output2
+            output3 = [
+                html.Div([
+                    html.H5(f'Comparison based on performance among {lifter_count[0]} other lifters',
+                            className='callout-content', style={'color': 'red'})
+                ], className='callout'),
+            ]
+
+            return squat_perc, bench_perc, deadlift_perc, output1, output2, output3
 
         else:
-            return "Please enter both name and age", name, age, '', ''
-    return '', '', '', '', ''
+            return "Please enter both name and age", name, age, '', '', ''
+    return '', '', '', '', '', ''
 
 # Callback to update the gauge chart
 @app.callback(

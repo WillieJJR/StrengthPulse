@@ -48,6 +48,30 @@ def kpi_three():
         ),
     ])
 
+def kpi_four():
+    return html.Div([
+        dbc.Card(
+            dbc.CardBody([
+                html.Div([
+                    html.H4("Times Competed:"),
+                    html.Div(id = 'times-competed-kpi'),
+                ], style={'textAlign': 'center'})
+            ])
+        ),
+    ])
+
+def kpi_five():
+    return html.Div([
+        dbc.Card(
+            dbc.CardBody([
+                html.Div([
+                    html.H4("Highest Placement: "),
+                    html.Div(id = 'placement-kpi'),
+                ], style={'textAlign': 'center'})
+            ])
+        ),
+    ])
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR], suppress_callback_exceptions=True)
 
 # Define colors
@@ -121,7 +145,7 @@ def render_comp_data():
 
 def render_user_stats():
     return html.Div([
-        html.H3('Model Overview', style={'color': text_color}),
+        html.H3('User Stats Analysis', style={'color': text_color}),
         html.P('This tab provides an explanation of the predictive model and its methodology.',
                style={'color': text_color}),
         html.Div(id='output-container', className='callout-container'),
@@ -144,12 +168,6 @@ def render_user_stats():
             style={'background-color': 'transparent', 'margin-bottom': '10px'}
         ),
         html.Button('Tested', id='tested-button', n_clicks=0),
-        # dcc.RadioItems(
-        #     id='tested-filter',
-        #     options=[{'label': 'Tested', 'value': 'Yes'}, {'label': 'Not Known', 'value': 'Not Known'}],
-        #     labelStyle={'display': 'inline', 'margin-right': '10px'},
-        #     style={'background-color': 'transparent', 'margin-left': '4in'}  # Adjust margin-left for separation
-        # ),
 
         dcc.Input(id='name-input', type='text', placeholder='Enter Name'),
         dcc.Input(id='age-input', type='number', placeholder='Enter Age'),
@@ -231,9 +249,31 @@ def render_user_stats():
 
 def render_comparative_analysis():
     return html.Div([
-        html.H3('Price Predictor', style={'color': text_color}),
-        html.P('This tab allows you to input values and see predictions for specific scenarios.',
+        html.H3('Lifter Analytics', style={'color': text_color}),
+        html.P('This tab allows the user to identify in-depth analytics for a specific lifter.',
                style={'color': text_color}),
+        dcc.Dropdown(
+            id='comp-lifter-filter',
+            options=[],
+            multi=False,
+            placeholder='Select Lifter...',
+            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
+        ),
+        html.P('Please select Gender'),
+        dcc.RadioItems(
+            id='sex-filter-t3',
+            options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
+                     {'label': 'Mx', 'value': 'Mx'}],
+            labelStyle={'display': 'inline', 'margin-right': '10px'},
+            style={'background-color': 'transparent', 'margin-bottom': '10px'}
+        ),
+        dbc.Row(
+            [
+                dbc.Col(kpi_four(), width=1, style={'margin-right': '0', 'padding-right': '0'}),
+                dbc.Col(kpi_five(), width=1, style={'margin-left': '0', 'padding-left': '0'}),
+            ],
+            style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center'}
+        )
 
     ])
 
@@ -248,6 +288,8 @@ def render_content(active_tab):
         return render_comparative_analysis()
     else:
         return html.Div([])
+
+''' Competition Data Tab '''
 
 @app.callback(
     [Output('weightclass-filter', 'options'),
@@ -296,6 +338,9 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
 
     # Initially, return an empty div
     return html.Div()
+
+
+''' User Stats Tab '''
 
 @app.callback(
     Output('lbs-button', 'style'),
@@ -647,6 +692,27 @@ def update_deadlift_chart(n_clicks, squat_vals):
     else:
         # If squat_percentile is None or 0, you may want to handle this case
         return go.Figure(), {'display': 'none'}
+
+
+'''Lifter Competition Analytics'''
+
+@app.callback(
+    [Output('comp-lifter-filter', 'options')],
+    [Input('sex-filter-t3', 'value')]
+)
+def update_dropdown_options(selected_gender):
+    # Check if a gender is selected before updating options
+    if selected_gender is None:
+        return [[]]  # Return empty options if no gender is selected
+
+    # Filter the dataframe based on the selected gender
+    subset_df = df[df['Sex'] == selected_gender]
+
+    # Create the options for the dropdown
+    comp_lifter_filter = [{'label': Lifter, 'value': Lifter} for Lifter in subset_df['Name'].unique()]
+
+    return [comp_lifter_filter]
+
 
 
 if __name__ == '__main__':

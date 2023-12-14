@@ -59,13 +59,13 @@ def apply_business_rules(df):
 
 
 '''Scratch Pad'''
-#df = retrieve_and_process_csv()
-
-#df['Date'] = pd.to_datetime(df['Date'])
-#df = df[df['Date'].dt.year >= 2013]
-
-#user_profile = df[df['Name'] == 'Taylor Atwood']
-
+# df = retrieve_and_process_csv()
+#
+# df['Date'] = pd.to_datetime(df['Date'])
+# df = df[df['Date'].dt.year >= 2013]
+#
+# user_profile = df[df['Name'] == 'Andrew Thoel']
+# user_profile.sort_values(by='MeetName', inplace=True)
 #
 # closest_age_class = df_age_match.loc[
 #     (df_age_match['Age'] - 17).abs().idxmin(),

@@ -713,6 +713,64 @@ def update_dropdown_options(selected_gender):
 
     return [comp_lifter_filter]
 
+@app.callback(
+    Output('times-competed-kpi', 'children'),
+    [Input('comp-lifter-filter', 'value')]
+)
+def update_kpi_competitions(selected_lifter):
+
+    competition_df = df
+
+    if selected_lifter is None:
+        competition_cnt = f'''Please select a lifter'''
+    else:
+        competition_lifter_df = competition_df[(competition_df['Name'] == selected_lifter) & (competition_df['Event'] == 'SBD')]
+
+
+        if len(competition_lifter_df) != 0:
+
+            competition_cnt = competition_lifter_df.groupby(['MeetName', 'Date']).size().reset_index(name='Count').shape[0]
+
+
+        else:
+
+            competition_cnt = 0
+
+
+    return competition_cnt
+
+
+@app.callback(
+    Output('placement-kpi', 'children'),
+    [Input('comp-lifter-filter', 'value')]
+)
+def update_highest_placement(selected_lifter):
+
+    competition_df = df
+
+    if selected_lifter is None:
+        highest_placement = "Please select a lifter"
+    else:
+        placement_lifter_df = competition_df[
+            (competition_df['Name'] == selected_lifter) & (competition_df['Event'] == 'SBD')]
+
+        if not placement_lifter_df.empty:
+            num_values = pd.to_numeric(placement_lifter_df['Place'], errors='coerce')
+            highest_placement = num_values.min()
+
+            if highest_placement == 1 and len(placement_lifter_df) == 1:
+                meetname, meetdate = placement_lifter_df.iloc[0]['MeetName'], placement_lifter_df.iloc[0]['Date']
+
+                multiple_lifters = len(competition_df[(competition_df['MeetName'] == meetname) & (
+                            competition_df['Date'] == meetdate) & (competition_df['Event'] == 'SBD')]) > 1
+
+                if not multiple_lifters:
+                    highest_placement = f"{highest_placement} *"
+
+        else:
+            highest_placement = "N/A"
+
+    return highest_placement
 
 
 if __name__ == '__main__':

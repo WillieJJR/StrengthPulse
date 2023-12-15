@@ -4,6 +4,7 @@ from dash import dcc
 from dash import html
 from dash import dash_table
 import plotly.graph_objects as go
+import plotly.express as px
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
@@ -273,8 +274,39 @@ def render_comparative_analysis():
                 dbc.Col(kpi_five(), width=1, style={'margin-left': '0', 'padding-left': '0'}),
             ],
             style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center'}
+        ),
+        html.P('Use the buttons to change the view..'),
+        dcc.RadioItems(
+            id='view-selection',
+            options=[
+                {'label': 'By Date', 'value': 'date'},
+                {'label': 'By Weight', 'value': 'weight'},
+                {'label': 'Deadlift', 'value': 'deadlift'}
+            ],
+            value='date',
+            labelStyle={'display': 'block', 'margin-bottom': '10px'},
+            inputStyle={'margin-right': '5px'},
+            style={'display': 'flex', 'flexDirection': 'column', 'width': '300px'}
+        ),
+        dcc.Graph(
+            id='line-chart',
+            figure=px.line(title='Line Chart'),
+            style={'display': 'none'}  # Initially hide the line chart
         )
-
+        # html.Div(
+        #     id='placeholder-chart',
+        #     style={
+        #         'width': '90%',  # Adjust the width as needed
+        #         'height': '500px',  # Adjust the height as needed
+        #         'border': '2px solid #ddd',  # Border for visualization
+        #         'margin': '20px auto',  # Adjust margin for positioning
+        #         'text-align': 'center',
+        #         'line-height': '400px',  # Vertical alignment in the middle
+        #         'font-size': '16px',
+        #         'color': '#888',
+        #     },
+        #     children="Placeholder Chart"
+        # )
     ])
 
 
@@ -771,6 +803,78 @@ def update_highest_placement(selected_lifter):
             highest_placement = "N/A"
 
     return highest_placement
+
+
+@app.callback(
+    Output('line-chart', 'figure'),
+    Output('line-chart', 'style'),
+    [Input('comp-lifter-filter', 'value'),
+     Input('view-selection', 'value')]
+)
+def update_line_chart(selected_lifter, view_type):
+    if selected_lifter is None:
+        # If no option is selected, return an empty chart and hide it
+        return px.line(title='Line Chart'), {'display': 'none'}
+
+    lifter_stats_df = df
+
+    if view_type == 'date':
+        cols = ['Date', 'MeetName']
+
+        # Update the line chart with data based on the selected option
+        # Replace this with your actual data and logic
+        lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
+        lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
+        lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+        line_chart_date = px.line(
+            lifter_stats_df_agg,
+            x='Date',
+            y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
+            title=f'Line Chart for {selected_lifter}',
+            markers=True,  # Set markers to True
+            line_shape='linear',  # Choose the line shape (optional)
+            hover_data = {'MeetName': True}
+        )
+        line_chart_date.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
+            plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
+            font_color='white',  # Set font color to white
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=False),
+            hovermode='x'
+        )
+
+        # Show the line chart
+        return line_chart_date, {'display': 'block'}
+
+    elif view_type == 'weight':
+        cols = ['BodyweightKg', 'MeetName', 'Date']
+
+
+        lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
+        lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
+        lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
+        line_chart_weight = px.line(
+            lifter_stats_df_agg,
+            x='BodyweightKg',
+            y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
+            title=f'Line Chart for {selected_lifter}',
+            markers=True,  # Set markers to True
+            line_shape='linear',  # Choose the line shape (optional)
+            hover_data={'MeetName': True, 'Date': True}
+        )
+        line_chart_weight.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
+            plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
+            font_color='white',  # Set font color to white
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=False),
+            hovermode='x'
+        )
+
+        return line_chart_weight, {'display': 'block'}
+
 
 
 if __name__ == '__main__':

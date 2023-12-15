@@ -64,8 +64,11 @@ def apply_business_rules(df):
 # df['Date'] = pd.to_datetime(df['Date'])
 # df = df[df['Date'].dt.year >= 2013]
 #
-# user_profile = df[df['Name'] == 'Andrew Thoel']
+# user_profile = df[df['Name'] == 'Amanda Lawrence #1']
 # user_profile.sort_values(by='MeetName', inplace=True)
+# user_profile = user_profile.drop_duplicates(subset=['BodyweightKg', 'MeetName', 'Date'])
+# grouped_user = user_profile.groupby(['BodyweightKg', 'MeetName', 'Date']).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
 #
 # closest_age_class = df_age_match.loc[
 #     (df_age_match['Age'] - 17).abs().idxmin(),

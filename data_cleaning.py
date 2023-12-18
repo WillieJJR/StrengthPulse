@@ -59,13 +59,54 @@ def apply_business_rules(df):
 
 
 '''Scratch Pad'''
-# df = retrieve_and_process_csv()
-#
-# df['Date'] = pd.to_datetime(df['Date'])
-# df = df[df['Date'].dt.year >= 2013]
-#
-# user_profile = df[df['Name'] == 'Amanda Lawrence #1']
-# user_profile.sort_values(by='MeetName', inplace=True)
+df = retrieve_and_process_csv()
+
+df['Date'] = pd.to_datetime(df['Date'])
+df = df[df['Date'].dt.year >= 2013]
+user_profile = df[(df['Name'] == 'Michael Peterson') & (df['Event'] == 'SBD')]
+anomoly_check_df = user_profile.sort_values(by='Age')
+anomoly_check_df['age_diff'] = anomoly_check_df['Age'].diff()
+anomoly_check_df['date_diff'] = anomoly_check_df['Date'].dt.year.diff()
+
+age_progression_threshold = 1  # Adjust based on your dataset
+
+# Identify potential anomalies
+anomaly_mask = (anomoly_check_df['age_diff'] - anomoly_check_df['date_diff']).abs() > age_progression_threshold
+anomoly_val_df = anomoly_check_df[anomaly_mask]
+
+anomoly_check_df['check'] = 0  # Initialize with zeros
+
+# Initialize the group number
+group_number = 1
+
+group_mapping ={}
+
+# Loop through the anomalous DataFrame and assign group numbers
+for _, anomalous_record in anomoly_val_df.iterrows():
+    # Identify matching records in the original DataFrame
+    match_mask = (
+            (anomoly_check_df['Name'] == anomalous_record['Name']) &
+            (anomoly_check_df['Date'] == anomalous_record['Date'])
+    )
+
+    # Check if the group number is already assigned
+    if not anomoly_check_df.loc[match_mask, 'check'].any():
+        # If not, assign the current group number to the 'check' column for the matching record
+        anomoly_check_df.loc[match_mask, 'check'] = group_number
+
+        # Store the matching records in the group mapping
+        group_mapping[group_number] = anomoly_check_df.loc[match_mask].index.tolist()
+
+        # Increment the group number
+        group_number += 1
+
+# Fill down the group number for non-anomalous records
+non_anomalous_mask = anomoly_check_df['check'] == 0
+anomoly_check_df.loc[non_anomalous_mask, 'check'] = anomoly_check_df['check'].replace(0, method='ffill')
+
+
+#user_profile = df[df['Name'] == 'Michael Peterson' & (df['Event'] == 'SBD')]
+#user_profile.sort_values(by='MeetName', inplace=True)
 # user_profile = user_profile.drop_duplicates(subset=['BodyweightKg', 'MeetName', 'Date'])
 # grouped_user = user_profile.groupby(['BodyweightKg', 'MeetName', 'Date']).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
 

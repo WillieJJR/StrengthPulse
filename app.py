@@ -258,7 +258,7 @@ def render_comparative_analysis():
             options=[],
             multi=False,
             placeholder='Select Lifter...',
-            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
+            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'},
         ),
         html.P('Please select Gender'),
         dcc.RadioItems(
@@ -270,8 +270,8 @@ def render_comparative_analysis():
         ),
         dbc.Row(
             [
-                dbc.Col(kpi_four(), width=1, style={'margin-right': '0', 'padding-right': '0'}),
-                dbc.Col(kpi_five(), width=1, style={'margin-left': '0', 'padding-left': '0'}),
+                dbc.Col(kpi_four(), width=1, style={'margin-right': '0', 'padding-right': '0', 'height': '25px'}),
+                dbc.Col(kpi_five(), width=1, style={'margin-left': '0', 'padding-left': '0', 'height': '25px'}),
             ],
             style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center'}
         ),
@@ -281,7 +281,7 @@ def render_comparative_analysis():
             options=[
                 {'label': 'By Date', 'value': 'date'},
                 {'label': 'By Weight', 'value': 'weight'},
-                {'label': 'Deadlift', 'value': 'deadlift'}
+                {'label': 'By Age', 'value': 'age'}
             ],
             value='date',
             labelStyle={'display': 'block', 'margin-bottom': '10px'},
@@ -293,20 +293,6 @@ def render_comparative_analysis():
             figure=px.line(title='Line Chart'),
             style={'display': 'none'}  # Initially hide the line chart
         )
-        # html.Div(
-        #     id='placeholder-chart',
-        #     style={
-        #         'width': '90%',  # Adjust the width as needed
-        #         'height': '500px',  # Adjust the height as needed
-        #         'border': '2px solid #ddd',  # Border for visualization
-        #         'margin': '20px auto',  # Adjust margin for positioning
-        #         'text-align': 'center',
-        #         'line-height': '400px',  # Vertical alignment in the middle
-        #         'font-size': '16px',
-        #         'color': '#888',
-        #     },
-        #     children="Placeholder Chart"
-        # )
     ])
 
 
@@ -614,7 +600,7 @@ def update_squat_chart(n_clicks, squat_vals):
             title={'text': "Squat", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="red"),
+                bar=dict(color="rgba(104,111,254,255)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -660,7 +646,7 @@ def update_bench_chart(n_clicks, squat_vals):
             title={'text': "Bench", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="red"),
+                bar=dict(color="rgba(104,111,254,255)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -705,7 +691,7 @@ def update_deadlift_chart(n_clicks, squat_vals):
             title={'text': "Deadlift", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="red"),
+                bar=dict(color="rgba(104,111,254,255)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -826,11 +812,12 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
         line_chart_date = px.line(
             lifter_stats_df_agg,
             x='Date',
             y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
-            title=f'Line Chart for {selected_lifter}',
+            title=f'Competition Performance by Date for {selected_lifter}',
             markers=True,  # Set markers to True
             line_shape='linear',  # Choose the line shape (optional)
             hover_data = {'MeetName': True}
@@ -859,7 +846,7 @@ def update_line_chart(selected_lifter, view_type):
             lifter_stats_df_agg,
             x='BodyweightKg',
             y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
-            title=f'Line Chart for {selected_lifter}',
+            title=f'Competition Performance by Weight (Kg) for {selected_lifter}',
             markers=True,  # Set markers to True
             line_shape='linear',  # Choose the line shape (optional)
             hover_data={'MeetName': True, 'Date': True}
@@ -874,6 +861,36 @@ def update_line_chart(selected_lifter, view_type):
         )
 
         return line_chart_weight, {'display': 'block'}
+
+    elif view_type == 'age':
+        cols = ['Age', 'MeetName', 'Date']
+
+        lifter_stats_df = lifter_stats_df[
+            (lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
+        lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
+        lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg(
+            {'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
+        line_chart_age = px.line(
+            lifter_stats_df_agg,
+            x='Age',
+            y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
+            title=f'Competition Performance by Age for {selected_lifter}',
+            markers=True,  # Set markers to True
+            line_shape='linear',  # Choose the line shape (optional)
+            hover_data={'MeetName': True, 'Date': True}
+        )
+        line_chart_age.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
+            plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
+            font_color='white',  # Set font color to white
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=False),
+            hovermode='x'
+        )
+
+
+        return line_chart_age, {'display': 'block'}
 
 
 

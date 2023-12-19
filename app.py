@@ -10,7 +10,7 @@ import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
 from data_retrieval import retrieve_and_process_csv
-from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules
+from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
 
 
 def kpi_one():
@@ -724,7 +724,7 @@ def update_dropdown_options(selected_gender):
         return [[]]  # Return empty options if no gender is selected
 
     # Filter the dataframe based on the selected gender
-    subset_df = df[df['Sex'] == selected_gender]
+    subset_df = df[(df['Sex'] == selected_gender) & (df['Event'] == 'SBD')]
 
     # Create the options for the dropdown
     comp_lifter_filter = [{'label': Lifter, 'value': Lifter} for Lifter in subset_df['Name'].unique()]
@@ -811,12 +811,23 @@ def update_line_chart(selected_lifter, view_type):
         # Replace this with your actual data and logic
         lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
+
+
+        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        if unique_lifter_validation['persona'].nunique() > 1:
+            cols.append('persona')
+            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
+        facet_col_expression = f'persona' if 'persona' in cols else None
 
         line_chart_date = px.line(
             lifter_stats_df_agg,
             x='Date',
             y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
+            facet_col=facet_col_expression,
+            facet_col_wrap=7,
             title=f'Competition Performance by Date for {selected_lifter}',
             markers=True,  # Set markers to True
             line_shape='linear',  # Choose the line shape (optional)
@@ -830,6 +841,11 @@ def update_line_chart(selected_lifter, view_type):
             yaxis=dict(showgrid=False),
             hovermode='x'
         )
+
+        for i in range(1, len(line_chart_date.data) + 1):
+            line_chart_date.update_xaxes(matches=f'x{i}', showgrid=False)
+            line_chart_date.update_yaxes(matches=f'y{i}', showgrid=False)
+
 
         # Show the line chart
         return line_chart_date, {'display': 'block'}

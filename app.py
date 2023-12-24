@@ -270,8 +270,8 @@ def render_comparative_analysis():
         ),
         dbc.Row(
             [
-                dbc.Col(kpi_four(), width=1, style={'margin-right': '0', 'padding-right': '0', 'height': '25px'}),
-                dbc.Col(kpi_five(), width=1, style={'margin-left': '0', 'padding-left': '0', 'height': '25px'}),
+                dbc.Col(kpi_four(), width=2, style={'margin-right': '0', 'padding-right': '0', 'height': '25px'}),
+                dbc.Col(kpi_five(), width=2, style={'margin-left': '0', 'padding-left': '0', 'height': '25px'}),
             ],
             style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center'}
         ),

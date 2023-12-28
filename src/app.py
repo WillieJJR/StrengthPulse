@@ -147,7 +147,7 @@ def render_comp_data():
 def render_user_stats():
     return html.Div([
         html.H3('User Stats Analysis', style={'color': text_color}),
-        html.P('This tab provides an explanation of the predictive model and its methodology.',
+        html.P('This tab allows users to benchmark their current Squat, bench and Deadlift maxes against actual competitors.',
                style={'color': text_color}),
         html.Div(id='output-container', className='callout-container'),
         html.Div(id='output-container-2', className='callout-container'),
@@ -251,8 +251,9 @@ def render_user_stats():
 def render_comparative_analysis():
     return html.Div([
         html.H3('Lifter Analytics', style={'color': text_color}),
-        html.P('This tab allows the user to identify in-depth analytics for a specific lifter.',
+        html.P('This tab allows the user to display competitors performance based on Date, Weight (kg), or Age.',
                style={'color': text_color}),
+        dcc.Markdown('**Note: Due to the absence of unique identifiers in competition data, individuals with the same name may not be fully distinguished. We are actively working to enhance this feature for accuracy'),
         dcc.Dropdown(
             id='comp-lifter-filter',
             options=[],
@@ -400,7 +401,7 @@ def update_tested_button(n_clicks):
     if n_clicks and n_clicks % 2 == 0:
         tested_button_style = {
             'borderRadius': '12px',
-            'background-color': 'rgba(255, 0, 0, 0.5)',
+            'background-color': 'rgba(0, 255, 0, 0.5)',
             'color': 'white',
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons

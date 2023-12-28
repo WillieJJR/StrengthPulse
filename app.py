@@ -73,7 +73,7 @@ def kpi_five():
         ),
     ])
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR], suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, 'assets/styles.css'], suppress_callback_exceptions=True)
 
 # Define colors
 text_color = '#ffffff'
@@ -342,6 +342,10 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
         print("Selected Sex:", selected_sex)
         print("Selected Federation:", selected_federation)
 
+        highlight_condition = [
+            {'backgroundColor': 'rgba(8,43,55,255)', 'color': 'white'}
+        ]
+
         if selected_weightclasses is not None and selected_ageclasses is not None and selected_sex is not None and selected_federation is not None:
             # Filter the data based on selections
             filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (df['Sex'] == selected_sex) & df['Federation'].isin(selected_federation)]
@@ -352,7 +356,8 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
             # Populate the filtered data in the DataTable
             return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size=10,
                                         style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
-                                        style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'})
+                                        style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
+                                        style_data_conditional=highlight_condition)
 
     # Initially, return an empty div
     return html.Div()

@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
-from data_retrieval import retrieve_and_process_csv
+from data_retrieval import retrieve_and_process_csv, retrieve_last_updated_date
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
 
 
@@ -104,7 +104,7 @@ lifter_count = []
 
 def render_comp_data():
     return html.Div([
-        html.H3(f'Most recent competition data as of {datetime.now().date()} ', style={'color': text_color}),
+        html.H3(f'Most recent competition data as of {retrieve_last_updated_date()} ', style={'color': text_color}),
         html.P('This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
                style={'color': text_color}),
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
@@ -147,7 +147,7 @@ def render_comp_data():
 def render_user_stats():
     return html.Div([
         html.H3('User Stats Analysis', style={'color': text_color}),
-        html.P('This tab allows users to benchmark their current Squat, bench and Deadlift maxes against actual competitors.',
+        html.P('This tab allows users to benchmark their current Squat, Bench and Deadlift maxes against actual competitors.',
                style={'color': text_color}),
         html.Div(id='output-container', className='callout-container'),
         html.Div(id='output-container-2', className='callout-container'),

@@ -67,9 +67,18 @@ def retrieve_last_updated_date() -> str:
                     if first_li_int != -1:
                         updated_date = first_li_text[first_li_int + 1:].strip()
                 else:
-                    updated_date = '''Could not find an updated date..'''
+                    updated_date = '''(Could not find an updated date..)'''
 
                 return updated_date
+
+            else:
+                print('Unable to find anu unordered lists in the div')
+
+        else:
+            print('No Div element found for class content')
+
+    else:
+        print('Failed to access the data')
 
 
 

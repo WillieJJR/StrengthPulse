@@ -16,7 +16,7 @@ class PowerliftingDataRetriever:
         self.updated_date = None
 
     '''create function to retrieve csv from website and read as a df'''
-    def retrieve_and_process_csv(self, chunk_size = 10000, print_interval=250000):
+    def retrieve_and_process_csv(self, chunk_size = 5000, print_interval=250000):
         response = requests.get(self.zip_url)
 
         if response.status_code == 200:

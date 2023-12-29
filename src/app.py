@@ -9,9 +9,11 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
-from data_retrieval import retrieve_and_process_csv, retrieve_last_updated_date
+from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
 
+
+data_retriever = PowerliftingDataRetriever()
 
 def kpi_one():
     return html.Div([
@@ -93,7 +95,7 @@ app.layout = html.Div(children=[
     html.Div(id='tab-content', style={'margin-top': '20px'}),
 ])
 
-df = retrieve_and_process_csv()
+df = data_retriever.retrieve_and_process_csv()
 remove_special_chars(df)
 df = convert_kg_to_lbs(df)
 df = apply_business_rules(df)
@@ -104,7 +106,7 @@ lifter_count = []
 
 def render_comp_data():
     return html.Div([
-        html.H3(f'Most recent competition data as of {retrieve_last_updated_date()} ', style={'color': text_color}),
+        html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} ', style={'color': text_color}),
         html.P('This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
                style={'color': text_color}),
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),

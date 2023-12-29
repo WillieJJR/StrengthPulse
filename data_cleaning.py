@@ -1,5 +1,5 @@
 import pandas as pd
-from data_retrieval import retrieve_and_process_csv
+from data_retrieval import PowerliftingDataRetriever
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 

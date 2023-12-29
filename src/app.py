@@ -76,6 +76,7 @@ def kpi_five():
     ])
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, 'assets/styles.css'], suppress_callback_exceptions=True)
+server = app.server
 
 # Define colors
 text_color = '#ffffff'

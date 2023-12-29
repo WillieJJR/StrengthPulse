@@ -920,4 +920,4 @@ def update_line_chart(selected_lifter, view_type):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)

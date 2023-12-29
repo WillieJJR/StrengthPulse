@@ -26,7 +26,7 @@ class PowerliftingDataRetriever:
                     with zipf.open(csv_file) as file:
                         self.csv_data = pd.read_csv(file)
                         self.csv_data = self.csv_data[self.csv_data['Country'] == 'USA']
-                        return self.csv_data  # Return the DataFrame
+                        return self.csv_data.head(10)  # Return the DataFrame
                 else:
                     print('No CSV file found in the zip archive')
         else:

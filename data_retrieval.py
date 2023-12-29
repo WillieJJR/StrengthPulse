@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import zipfile
 from io import BytesIO
+import time
 
 '''Create PL Data retriever class'''
 class PowerliftingDataRetriever:
@@ -15,7 +16,7 @@ class PowerliftingDataRetriever:
         self.updated_date = None
 
     '''create function to retrieve csv from website and read as a df'''
-    def retrieve_and_process_csv(self):
+    def retrieve_and_process_csv(self, chunk_size = 10000, print_interval=250000):
         response = requests.get(self.zip_url)
 
         if response.status_code == 200:
@@ -23,10 +24,24 @@ class PowerliftingDataRetriever:
                 csv_file = self.find_csv_file(zipf)
 
                 if csv_file:
-                    with zipf.open(csv_file) as file:
-                        self.csv_data = pd.read_csv(file)
-                        self.csv_data = self.csv_data[self.csv_data['Country'] == 'USA']
-                        return self.csv_data  # Return the DataFrame
+                    chunks = pd.read_csv(zipf.open(csv_file), chunksize=chunk_size)
+                    filtered_chunks = []
+                    records_ingested = 0
+
+                    for chunk in chunks:
+                        # Apply filtering directly during reading
+                        filtered_chunk = chunk[chunk['Country'] == 'USA']
+                        filtered_chunks.append(filtered_chunk)
+
+                        records_ingested += chunk.shape[0]
+
+                        # Print records ingested at regular intervals
+                        if records_ingested % print_interval == 0:
+                            print(f"Records Ingested: {records_ingested}")
+
+                    # Concatenate filtered chunks into a single DataFrame
+                    self.csv_data = pd.concat(filtered_chunks, ignore_index=True)
+                    return self.csv_data  # Return the DataFrame
                 else:
                     print('No CSV file found in the zip archive')
         else:

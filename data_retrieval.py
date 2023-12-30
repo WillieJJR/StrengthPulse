@@ -16,7 +16,7 @@ class PowerliftingDataRetriever:
         self.updated_date = None
 
     '''create function to retrieve csv from website and read as a df'''
-    def retrieve_and_process_csv(self, chunk_size = 100, print_interval=250000):
+    def retrieve_and_process_csv(self, chunk_size = 500, print_interval=250000):
         response = requests.get(self.zip_url)
 
         if response.status_code == 200:
@@ -27,10 +27,15 @@ class PowerliftingDataRetriever:
                     chunks = pd.read_csv(zipf.open(csv_file), chunksize=chunk_size)
                     filtered_chunks = []
                     records_ingested = 0
+                    #filter_date = pd.to_datetime(filter_date)
 
                     for chunk in chunks:
+
+                        #test
+                        #chunk['Date'] = pd.to_datetime(chunk['Date'])
                         # Apply filtering directly during reading
                         filtered_chunk = chunk[chunk['Country'] == 'USA']
+                        #filtered_chunk = filtered_chunk[filtered_chunk['Date'] >= filter_date]
                         filtered_chunks.append(filtered_chunk)
 
                         records_ingested += chunk.shape[0]

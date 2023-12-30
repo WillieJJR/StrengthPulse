@@ -113,8 +113,12 @@ def clean_same_names(df, threshold: int): #assumes a df is cleaned and filtered 
 
 
 '''Scratch Pad'''
-# df = retrieve_and_process_csv()
-#
+# data_retriever = PowerliftingDataRetriever()
+# df = data_retriever.retrieve_and_process_csv()
+# datatype_column1 = df['Date'].dtype
 # df['Date'] = pd.to_datetime(df['Date'])
+#
+#
+#
 # df = df[df['Date'].dt.year >= 2013]
 # user_profile = df[(df['Name'] == 'Ty Evans #1') & (df['Event'] == 'SBD')]

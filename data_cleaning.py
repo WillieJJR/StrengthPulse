@@ -1,4 +1,7 @@
 import pandas as pd
+from postgres_ingestion import fetch_data
+import psycopg2
+from psycopg2 import sql
 from data_retrieval import PowerliftingDataRetriever
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler

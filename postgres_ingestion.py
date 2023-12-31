@@ -106,7 +106,8 @@ def fetch_data(table_name, database_url):
     cur = conn.cursor()
 
     # Fetch data from the table
-    query = f"SELECT * FROM {table_name} limit 100000;"
+    query = f"SELECT * FROM {table_name} limit 50000;"
+    print(query)
     result = pd.read_sql_query(query, conn)
     #cur.execute(query)
     #result = cur.fetchall()
@@ -116,16 +117,31 @@ def fetch_data(table_name, database_url):
 
     return result
 
+# def distinct_federation(table_name, database_url):
+#     conn = psycopg2.connect(database_url)
+#     cur = conn.cursor()
+#     query = f"""SELECT DISTINCT "Federation" FROM {table_name} ;"""
+#     cur.execute(query)
+#     rows = cur.fetchall()
+#
+#     cur.close()
+#     conn.close()
+#
+#     # Convert the tuples to a list of dictionaries
+#     result_list = [{'label': federation, 'value': federation} for federation, in rows]
+#
+#     return result_list
+
+
 if __name__ == "__main__":
     create_table()
     insert_data()
     fetch_data()
+    #distinct_federation()
 
 # create_table(database_url, csv_data=df, table_name='powerlifting_data')
 # insert_data(database_url, csv_data=df, table_name='powerlifting_data')
 # result_df = fetch_data(table_name='powerlifting_data', database_url=database_url)
-
-
 
 
 

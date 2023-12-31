@@ -11,7 +11,13 @@ from datetime import datetime
 from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
+from postgres_ingestion import fetch_data
+from os.path import dirname, join
+import os
 
+
+data_retriever = PowerliftingDataRetriever()
+css_path = join(dirname(dirname(__file__)), 'assets') + '\styles.css'
 
 def kpi_one():
     return html.Div([
@@ -73,13 +79,13 @@ def kpi_five():
         ),
     ])
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, 'assets/styles.css'], suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, css_path], suppress_callback_exceptions=True)
+server = app.server
 
 # Define colors
 text_color = '#ffffff'
 link_color = '#007bff'
 
-data_retriever = PowerliftingDataRetriever()
 
 app.layout = html.Div(children=[
     html.H1("StrengthPulse", style={'textAlign': 'center', 'color': text_color}),
@@ -88,13 +94,17 @@ app.layout = html.Div(children=[
     dbc.Tabs(id='tabs', active_tab='tab-features', children=[
         dbc.Tab(label='Most Current Competition Data', tab_id='comp-data'),
         dbc.Tab(label='Personal Powerlifting Stats', tab_id='user-stats'),
-        dbc.Tab(label='How do you Measure Up?', tab_id='tab-comparative-analysis'),
+        dbc.Tab(label='Competitor Analytics', tab_id='tab-comparative-analysis'),
     ]),
 
     html.Div(id='tab-content', style={'margin-top': '20px'}),
 ])
 
-df = data_retriever.retrieve_and_process_csv()
+#df = data_retriever.retrieve_and_process_csv()
+database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
+
+df = fetch_data(table_name='powerlifting_data', database_url=database_url)
+#df = data_retriever.retrieve_and_process_csv()
 remove_special_chars(df)
 df = convert_kg_to_lbs(df)
 df = apply_business_rules(df)
@@ -105,7 +115,7 @@ lifter_count = []
 
 def render_comp_data():
     return html.Div([
-        html.H3(f'Most recent competition data as of {datetime.now().date()} ', style={'color': text_color}),
+        html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} ', style={'color': text_color}),
         html.P('This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
                style={'color': text_color}),
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
@@ -148,7 +158,7 @@ def render_comp_data():
 def render_user_stats():
     return html.Div([
         html.H3('User Stats Analysis', style={'color': text_color}),
-        html.P('This tab provides an explanation of the predictive model and its methodology.',
+        html.P('This tab allows users to benchmark their current Squat, Bench and Deadlift maxes against actual competitors.',
                style={'color': text_color}),
         html.Div(id='output-container', className='callout-container'),
         html.Div(id='output-container-2', className='callout-container'),
@@ -252,8 +262,9 @@ def render_user_stats():
 def render_comparative_analysis():
     return html.Div([
         html.H3('Lifter Analytics', style={'color': text_color}),
-        html.P('This tab allows the user to identify in-depth analytics for a specific lifter.',
+        html.P('This tab allows the user to display competitors performance based on Date, Weight (kg), or Age.',
                style={'color': text_color}),
+        dcc.Markdown('**Note: Due to the absence of unique identifiers in competition data, individuals with the same name may not be fully distinguished. We are actively working to enhance this feature for accuracy'),
         dcc.Dropdown(
             id='comp-lifter-filter',
             options=[],
@@ -401,7 +412,7 @@ def update_tested_button(n_clicks):
     if n_clicks and n_clicks % 2 == 0:
         tested_button_style = {
             'borderRadius': '12px',
-            'background-color': 'rgba(255, 0, 0, 0.5)',
+            'background-color': 'rgba(0, 255, 0, 0.5)',
             'color': 'white',
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons
@@ -862,12 +873,22 @@ def update_line_chart(selected_lifter, view_type):
 
         lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
+
+        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        if unique_lifter_validation['persona'].nunique() > 1:
+            cols.append('persona')
+            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
+        facet_col_expression = f'persona' if 'persona' in cols else None
 
         line_chart_weight = px.line(
             lifter_stats_df_agg,
             x='BodyweightKg',
             y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
+            facet_col=facet_col_expression,
+            facet_col_wrap=7,
             title=f'Competition Performance by Weight (Kg) for {selected_lifter}',
             markers=True,  # Set markers to True
             line_shape='linear',  # Choose the line shape (optional)
@@ -882,6 +903,10 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        for i in range(1, len(line_chart_weight.data) + 1):
+            line_chart_weight.update_xaxes(matches=f'x{i}', showgrid=False)
+            line_chart_weight.update_yaxes(matches=f'y{i}', showgrid=False)
+
         return line_chart_weight, {'display': 'block'}
 
     elif view_type == 'age':
@@ -890,13 +915,23 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df = lifter_stats_df[
             (lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
+
+        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        if unique_lifter_validation['persona'].nunique() > 1:
+            cols.append('persona')
+            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg(
             {'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
+        facet_col_expression = f'persona' if 'persona' in cols else None
 
         line_chart_age = px.line(
             lifter_stats_df_agg,
             x='Age',
             y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
+            facet_col=facet_col_expression,
+            facet_col_wrap=7,
             title=f'Competition Performance by Age for {selected_lifter}',
             markers=True,  # Set markers to True
             line_shape='linear',  # Choose the line shape (optional)
@@ -911,10 +946,13 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        for i in range(1, len(line_chart_age.data) + 1):
+            line_chart_age.update_xaxes(matches=f'x{i}', showgrid=False)
+            line_chart_age.update_yaxes(matches=f'y{i}', showgrid=False)
 
         return line_chart_age, {'display': 'block'}
 
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False, host= '0.0.0.0')

@@ -9,6 +9,7 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
+
 from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
 from postgres_ingestion import fetch_data
@@ -104,6 +105,7 @@ app.layout = html.Div(children=[
 database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
 
 df = fetch_data(table_name='powerlifting_data', database_url=database_url)
+#df = data_retriever.retrieve_and_process_csv()
 remove_special_chars(df)
 df = convert_kg_to_lbs(df)
 df = apply_business_rules(df)

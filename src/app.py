@@ -94,7 +94,7 @@ app.layout = html.Div(children=[
     dbc.Tabs(id='tabs', active_tab='tab-features', children=[
         dbc.Tab(label='Most Current Competition Data', tab_id='comp-data'),
         dbc.Tab(label='Personal Powerlifting Stats', tab_id='user-stats'),
-        dbc.Tab(label='How do you Measure Up?', tab_id='tab-comparative-analysis'),
+        dbc.Tab(label='Competitor Analytics', tab_id='tab-comparative-analysis'),
     ]),
 
     html.Div(id='tab-content', style={'margin-top': '20px'}),

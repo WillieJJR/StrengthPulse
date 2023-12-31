@@ -106,7 +106,7 @@ def fetch_data(table_name, database_url):
     cur = conn.cursor()
 
     # Fetch data from the table
-    query = f"SELECT * FROM {table_name} limit 50;"
+    query = f"SELECT * FROM {table_name} limit 50000;"
     result = pd.read_sql_query(query, conn)
     #cur.execute(query)
     #result = cur.fetchall()

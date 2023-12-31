@@ -11,7 +11,7 @@ from datetime import datetime
 from scipy.stats import percentileofscore
 
 from data_retrieval import PowerliftingDataRetriever
-from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
+from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names, reduce_mem_usage
 from postgres_ingestion import fetch_data
 from os.path import dirname, join
 import os
@@ -105,6 +105,10 @@ app.layout = html.Div(children=[
 database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
 
 df = fetch_data(table_name='powerlifting_data', database_url=database_url)
+#df = reduce_mem_usage(df=df)
+memory_usage = df.memory_usage(deep=True)
+total_memory_usage = memory_usage.sum() / (1024**2)  # Convert bytes to megabytes
+print(f'Total memory usage: {total_memory_usage:.2f} MB')
 #df = data_retriever.retrieve_and_process_csv()
 remove_special_chars(df)
 df = convert_kg_to_lbs(df)

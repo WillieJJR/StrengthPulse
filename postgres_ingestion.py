@@ -106,7 +106,9 @@ def fetch_data(table_name, database_url):
     cur = conn.cursor()
 
     # Fetch data from the table
-    query = f"SELECT * FROM {table_name} limit 50000;"
+    query = f"""SELECT "Name", "Sex", "Event", "Age", "BirthYearClass", "AgeClass", "Division", "BodyweightKg",
+     "WeightClassKg", "Best3SquatKg", "Best3BenchKg", "Best3DeadliftKg", "Wilks", "Place", "Tested", "Country", "Federation",
+     "Date", "MeetName" FROM {table_name} WHERE "Age" IS NOT NULL AND CAST(SUBSTRING("Date" FROM 1 FOR 4) AS INTEGER) > 2018 AND "Place" != 'DQ';"""
     result = pd.read_sql_query(query, conn)
 
     # Close the connection

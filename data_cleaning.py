@@ -115,10 +115,25 @@ def clean_same_names(df, threshold: int): #assumes a df is cleaned and filtered 
 '''Scratch Pad'''
 # data_retriever = PowerliftingDataRetriever()
 # df = data_retriever.retrieve_and_process_csv()
-# datatype_column1 = df['Date'].dtype
+# # datatype_column1 = df['Date'].dtype
 # df['Date'] = pd.to_datetime(df['Date'])
-#
-#
-#
+# #
+# #
+# #
 # df = df[df['Date'].dt.year >= 2013]
 # user_profile = df[(df['Name'] == 'Ty Evans #1') & (df['Event'] == 'SBD')]
+# cols = ['BodyweightKg', 'MeetName', 'Date']
+# df_user_profile = user_profile.drop_duplicates(subset=cols)
+#
+# unique_lifter_validation = clean_same_names(df_user_profile, 1)
+# if unique_lifter_validation['persona'].nunique() > 1:
+#     cols.append('persona')
+#     df_user_profile = clean_same_names(df_user_profile, 1)
+#
+#
+# lifter_stats_df_agg = df_user_profile.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+#
+# unique_lifter_validation = clean_same_names(df_user_profile_2, 1)
+# if unique_lifter_validation['persona'].nunique() > 1:
+#     cols.append('persona')
+#     lifter_stats_df = clean_same_names(df_user_profile_2, 1)

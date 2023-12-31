@@ -11,9 +11,13 @@ from datetime import datetime
 from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
+from postgres_ingestion import fetch_data
+from os.path import dirname, join
+import os
 
 
 data_retriever = PowerliftingDataRetriever()
+css_path = join(dirname(dirname(__file__)), 'assets') + '\styles.css'
 
 def kpi_one():
     return html.Div([
@@ -75,7 +79,7 @@ def kpi_five():
         ),
     ])
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, 'assets/styles.css'], suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, css_path], suppress_callback_exceptions=True)
 server = app.server
 
 # Define colors
@@ -96,7 +100,10 @@ app.layout = html.Div(children=[
     html.Div(id='tab-content', style={'margin-top': '20px'}),
 ])
 
-df = data_retriever.retrieve_and_process_csv()
+#df = data_retriever.retrieve_and_process_csv()
+database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
+
+df = fetch_data(table_name='powerlifting_data', database_url=database_url)
 remove_special_chars(df)
 df = convert_kg_to_lbs(df)
 df = apply_business_rules(df)
@@ -865,12 +872,22 @@ def update_line_chart(selected_lifter, view_type):
 
         lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
+
+        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        if unique_lifter_validation['persona'].nunique() > 1:
+            cols.append('persona')
+            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
+        facet_col_expression = f'persona' if 'persona' in cols else None
 
         line_chart_weight = px.line(
             lifter_stats_df_agg,
             x='BodyweightKg',
             y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
+            facet_col=facet_col_expression,
+            facet_col_wrap=7,
             title=f'Competition Performance by Weight (Kg) for {selected_lifter}',
             markers=True,  # Set markers to True
             line_shape='linear',  # Choose the line shape (optional)
@@ -885,6 +902,10 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        for i in range(1, len(line_chart_weight.data) + 1):
+            line_chart_weight.update_xaxes(matches=f'x{i}', showgrid=False)
+            line_chart_weight.update_yaxes(matches=f'y{i}', showgrid=False)
+
         return line_chart_weight, {'display': 'block'}
 
     elif view_type == 'age':
@@ -893,13 +914,23 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df = lifter_stats_df[
             (lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
+
+        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        if unique_lifter_validation['persona'].nunique() > 1:
+            cols.append('persona')
+            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg(
             {'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+
+        facet_col_expression = f'persona' if 'persona' in cols else None
 
         line_chart_age = px.line(
             lifter_stats_df_agg,
             x='Age',
             y=['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'],
+            facet_col=facet_col_expression,
+            facet_col_wrap=7,
             title=f'Competition Performance by Age for {selected_lifter}',
             markers=True,  # Set markers to True
             line_shape='linear',  # Choose the line shape (optional)
@@ -914,10 +945,14 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        for i in range(1, len(line_chart_age.data) + 1):
+            line_chart_age.update_xaxes(matches=f'x{i}', showgrid=False)
+            line_chart_age.update_yaxes(matches=f'y{i}', showgrid=False)
 
         return line_chart_age, {'display': 'block'}
 
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False, host= '0.0.0.0')
+    #app.run_server(debug=False, host= '0.0.0.0')
+    app.run_server(debug=True)

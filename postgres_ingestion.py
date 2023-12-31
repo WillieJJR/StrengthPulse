@@ -6,8 +6,8 @@ from io import StringIO
 
 data_retriever = PowerliftingDataRetriever()
 
-df = data_retriever.retrieve_and_process_csv()
-database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
+#df = data_retriever.retrieve_and_process_csv()
+#database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
 
 
 def get_pg_datatype(pandas_dtype):
@@ -116,9 +116,14 @@ def fetch_data(table_name, database_url):
 
     return result
 
-create_table(database_url, csv_data=df, table_name='powerlifting_data')
-insert_data(database_url, csv_data=df, table_name='powerlifting_data')
-result_df = fetch_data(table_name='powerlifting_data', database_url=database_url)
+if __name__ == "__main__":
+    create_table()
+    insert_data()
+    fetch_data()
+
+# create_table(database_url, csv_data=df, table_name='powerlifting_data')
+# insert_data(database_url, csv_data=df, table_name='powerlifting_data')
+# result_df = fetch_data(table_name='powerlifting_data', database_url=database_url)
 
 
 

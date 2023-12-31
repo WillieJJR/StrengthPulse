@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
-from data_retrieval import retrieve_and_process_csv
+from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
 
 
@@ -79,6 +79,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, 'assets/styles
 text_color = '#ffffff'
 link_color = '#007bff'
 
+data_retriever = PowerliftingDataRetriever()
 
 app.layout = html.Div(children=[
     html.H1("StrengthPulse", style={'textAlign': 'center', 'color': text_color}),
@@ -93,7 +94,7 @@ app.layout = html.Div(children=[
     html.Div(id='tab-content', style={'margin-top': '20px'}),
 ])
 
-df = retrieve_and_process_csv()
+df = data_retriever.retrieve_and_process_csv()
 remove_special_chars(df)
 df = convert_kg_to_lbs(df)
 df = apply_business_rules(df)

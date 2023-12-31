@@ -95,7 +95,14 @@ class PowerliftingDataRetriever:
 # Call the data retrieval functions when the application is started
 if __name__ == "__main__":
     data_retriever = PowerliftingDataRetriever()
-    df = data_retriever.retrieve_and_process_csv()  # Get the DataFrame
+    data_retriever.retrieve_and_process_csv()  # Get the DataFrame
     data_retriever.retrieve_last_updated_date()
 
-
+# if __name__ == "__main__":
+#     data_retriever = PowerliftingDataRetriever()
+#
+#     # Call the method explicitly when needed
+#     data_retriever.retrieve_and_process_csv(chunk_size=500, print_interval=250000)
+#
+#     # Now you can use other methods as needed
+#     data_retriever.retrieve_last_updated_date()

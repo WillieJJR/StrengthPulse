@@ -11,7 +11,8 @@ from datetime import datetime
 from scipy.stats import percentileofscore
 
 from data_retrieval import PowerliftingDataRetriever
-from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names, reduce_mem_usage
+#from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names, reduce_mem_usage
+from data_cleaning import clean_same_names
 from postgres_ingestion import fetch_data
 from os.path import dirname, join
 import os
@@ -110,9 +111,9 @@ memory_usage = df.memory_usage(deep=True)
 total_memory_usage = memory_usage.sum() / (1024**2)  # Convert bytes to megabytes
 print(f'Total memory usage: {total_memory_usage:.2f} MB')
 #df = data_retriever.retrieve_and_process_csv()
-remove_special_chars(df)
-df = convert_kg_to_lbs(df)
-df = apply_business_rules(df)
+# remove_special_chars(df)
+# df = convert_kg_to_lbs(df)
+# df = apply_business_rules(df)
 user_data = {}
 user_data_perc = {}
 estimated_comp_class = {}

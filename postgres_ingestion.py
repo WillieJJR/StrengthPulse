@@ -3,6 +3,7 @@ from data_retrieval import PowerliftingDataRetriever
 from psycopg2 import sql
 import pandas as pd
 from io import StringIO
+from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules
 
 data_retriever = PowerliftingDataRetriever()
 
@@ -109,11 +110,26 @@ def fetch_data(table_name, database_url):
     query = f"""SELECT "Name", "Sex", "Event", "Age", "BirthYearClass", "AgeClass", "Division", "BodyweightKg",
      "WeightClassKg", "Best3SquatKg", "Best3BenchKg", "Best3DeadliftKg", "Wilks", "Place", "Tested", "Country", "Federation",
      "Date", "MeetName" FROM {table_name} WHERE "Age" IS NOT NULL AND CAST(SUBSTRING("Date" FROM 1 FOR 4) AS INTEGER) > 2019 AND "Place" != 'DQ';"""
-    result = pd.read_sql_query(query, conn)
+    #result = pd.read_sql_query(query, conn)
+    chunk_size = 1000  # Adjust as needed
+    result_chunks = pd.read_sql_query(query, conn, chunksize=chunk_size)
+
+    # Apply custom functions to each chunk
+    processed_chunks = []
+    for chunk in result_chunks:
+        # Apply your custom functions to the chunk
+        remove_special_chars(chunk)
+        convert_kg_to_lbs(chunk)
+        apply_business_rules(chunk)
+
+        # Append the processed chunk to the list
+        processed_chunks.append(chunk)
+
+    # Concatenate the processed chunks into a single DataFrame
+    result = pd.concat(processed_chunks, ignore_index=True)
 
     # Close the connection
     conn.close()
-
     return result
 
 # def distinct_federation(table_name, database_url):

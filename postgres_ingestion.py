@@ -109,7 +109,7 @@ def fetch_data(table_name, database_url):
     # Fetch data from the table
     query = f"""SELECT "Name", "Sex", "Event", "Age", "BirthYearClass", "AgeClass", "Division", "BodyweightKg",
      "WeightClassKg", "Best3SquatKg", "Best3BenchKg", "Best3DeadliftKg", "Wilks", "Place", "Tested", "Country", "Federation",
-     "Date", "MeetName" FROM {table_name} WHERE "Age" IS NOT NULL AND CAST(SUBSTRING("Date" FROM 1 FOR 4) AS INTEGER) > 2019 AND "Place" != 'DQ' LIMIT 50000;"""
+     "Date", "MeetName" FROM {table_name} WHERE "Age" IS NOT NULL AND CAST(SUBSTRING("Date" FROM 1 FOR 4) AS INTEGER) > 2019 AND "Place" != 'DQ';"""
     #result = pd.read_sql_query(query, conn)
     chunk_size = 1000  # Adjust as needed
     result_chunks = pd.read_sql_query(query, conn, chunksize=chunk_size)

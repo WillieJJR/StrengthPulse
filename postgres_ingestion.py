@@ -118,9 +118,9 @@ def fetch_data(table_name, database_url):
     processed_chunks = []
     for chunk in result_chunks:
         # Apply your custom functions to the chunk
-        # remove_special_chars(chunk)
-        # convert_kg_to_lbs(chunk)
-        # apply_business_rules(chunk)
+        remove_special_chars(chunk)
+        chunk = convert_kg_to_lbs(chunk)
+        chunk = apply_business_rules(chunk)
 
         # Append the processed chunk to the list
         processed_chunks.append(chunk)

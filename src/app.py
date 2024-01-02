@@ -772,6 +772,10 @@ def update_kpi_competitions(selected_lifter):
 
             competition_cnt = competition_lifter_df.groupby(['MeetName', 'Date']).size().reset_index(name='Count').shape[0]
 
+            unique_lifter_validation = clean_same_names(competition_lifter_df, 1)
+            if unique_lifter_validation['persona'].nunique() > 1:
+                competition_cnt = 'Identified more than one lifter'
+
 
         else:
 
@@ -796,8 +800,14 @@ def update_highest_placement(selected_lifter):
             (competition_df['Name'] == selected_lifter) & (competition_df['Event'] == 'SBD')]
 
         if not placement_lifter_df.empty:
+
             num_values = pd.to_numeric(placement_lifter_df['Place'], errors='coerce')
             highest_placement = num_values.min()
+
+            unique_lifter_validation = clean_same_names(placement_lifter_df, 1)
+            if unique_lifter_validation['persona'].nunique() > 1:
+                highest_placement = 'Identified more than one lifter'
+
 
             if highest_placement == 1 and len(placement_lifter_df) == 1:
                 meetname, meetdate = placement_lifter_df.iloc[0]['MeetName'], placement_lifter_df.iloc[0]['Date']

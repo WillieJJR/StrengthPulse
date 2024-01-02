@@ -842,6 +842,8 @@ def update_line_chart(selected_lifter, view_type):
             lifter_stats_df = clean_same_names(lifter_stats_df, 1)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+        lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
+            ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
         facet_col_expression = f'persona' if 'persona' in cols else None
 
@@ -886,6 +888,8 @@ def update_line_chart(selected_lifter, view_type):
             lifter_stats_df = clean_same_names(lifter_stats_df, 1)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+        lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
+            ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
         facet_col_expression = f'persona' if 'persona' in cols else None
 
@@ -929,6 +933,8 @@ def update_line_chart(selected_lifter, view_type):
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg(
             {'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+        lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
+            ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
         facet_col_expression = f'persona' if 'persona' in cols else None
 

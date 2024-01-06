@@ -150,13 +150,13 @@ def reduce_mem_usage(df, verbose=True):
 # print(f'Total memory usage: {total_memory_usage:.2f} MB')
 # data_retriever = PowerliftingDataRetriever()
 # df = data_retriever.retrieve_and_process_csv()
-# # datatype_column1 = df['Date'].dtype
+# datatype_column1 = df['Date'].dtype
 # df['Date'] = pd.to_datetime(df['Date'])
 # #
 # #
 # #
 # df = df[df['Date'].dt.year >= 2013]
-# user_profile = df[(df['Name'] == 'Ty Evans #1') & (df['Event'] == 'SBD')]
+# user_profile = df[(df['Name'] == 'Michael Peterson') & (df['Event'] == 'SBD')]
 # cols = ['BodyweightKg', 'MeetName', 'Date']
 # df_user_profile = user_profile.drop_duplicates(subset=cols)
 #

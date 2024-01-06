@@ -13,13 +13,15 @@ from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
 #from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names, reduce_mem_usage
 from data_cleaning import clean_same_names
-from postgres_ingestion import fetch_data
+#from postgres_ingestion import fetch_data
+from postgres_ingestion import PowerliftingDataHandler
 from os.path import dirname, join
 import os
 
 
 data_retriever = PowerliftingDataRetriever()
 css_path = join(dirname(dirname(__file__)), 'assets') + '\styles.css'
+#css_path = '../assets/styles.css'
 
 def kpi_one():
     return html.Div([
@@ -104,16 +106,13 @@ app.layout = html.Div(children=[
 
 #df = data_retriever.retrieve_and_process_csv()
 database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
+postgres_instance = PowerliftingDataHandler(database_url)
 
-df = fetch_data(table_name='powerlifting_data', database_url=database_url)
-#df = reduce_mem_usage(df=df)
+df = postgres_instance.fetch_data(table_name='powerlifting_data')
 memory_usage = df.memory_usage(deep=True)
 total_memory_usage = memory_usage.sum() / (1024**2)  # Convert bytes to megabytes
 print(f'Total memory usage: {total_memory_usage:.2f} MB')
-#df = data_retriever.retrieve_and_process_csv()
-# remove_special_chars(df)
-# df = convert_kg_to_lbs(df)
-# df = apply_business_rules(df)
+
 user_data = {}
 user_data_perc = {}
 estimated_comp_class = {}
@@ -535,11 +534,13 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 if lbs_n_clicks and lbs_n_clicks % 2 == 0:
                     df_grouped['squat'] = df_grouped['squat'].fillna(0)
                     squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'] / float(2.2))
+                    squat_perc_rounded = '{:.1%}'.format(squat_perc / 100)
                     squat_perc_val = squat_perc
                     user_data_perc.update({'squat_perc': squat_perc_val})
                 else:
                     df_grouped['squat'] = df_grouped['squat'].fillna(0)
                     squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
+                    squat_perc_rounded = '{:.1%}'.format(squat_perc / 100)
                     squat_perc_val = squat_perc
                     user_data_perc.update({'squat_perc': squat_perc_val})
 
@@ -547,11 +548,13 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 if lbs_n_clicks and lbs_n_clicks % 2 == 0:
                     df_grouped['bench'] = df_grouped['bench'].fillna(0)
                     bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'] / float(2.2))
+                    bench_perc_rounded = '{:.1%}'.format(bench_perc / 100)
                     bench_perc_val = bench_perc
                     user_data_perc.update({'bench_perc': bench_perc_val})
                 else:
                     df_grouped['bench'] = df_grouped['bench'].fillna(0)
                     bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
+                    bench_perc_rounded = '{:.1%}'.format(bench_perc / 100)
                     bench_perc_val = bench_perc
                     user_data_perc.update({'bench_perc': bench_perc_val})
 
@@ -559,11 +562,13 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 if lbs_n_clicks and lbs_n_clicks % 2 == 0:
                     df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
                     deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'] / float(2.2))
+                    deadlift_perc_rounded = '{:.1%}'.format(deadlift_perc / 100)
                     deadlift_perc_val = deadlift_perc
                     user_data_perc.update({'deadlift_perc': deadlift_perc_val})
                 else:
                     df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
                     deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
+                    deadlift_perc_rounded = '{:.1%}'.format(deadlift_perc / 100)
                     deadlift_perc_val = deadlift_perc
                     user_data_perc.update({'deadlift_perc': deadlift_perc_val})
 
@@ -593,7 +598,7 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 ], className='callout'),
             ]
 
-            return squat_perc, bench_perc, deadlift_perc, output1, output2, output3
+            return squat_perc_rounded, bench_perc_rounded, deadlift_perc_rounded, output1, output2, output3
 
         else:
             return "Please enter both name and age", name, age, '', '', ''

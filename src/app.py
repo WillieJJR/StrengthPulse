@@ -20,8 +20,9 @@ import os
 
 
 data_retriever = PowerliftingDataRetriever()
-css_path = join(dirname(dirname(__file__)), 'assets') + '\styles.css'
-#css_path = '../assets/styles.css'
+#css_path = join(dirname(dirname(__file__)), 'assets') + '\styles.css'
+css_path = 'assets/styles.css'
+print(css_path)
 
 def kpi_one():
     return html.Div([

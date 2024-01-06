@@ -1,0 +1,12 @@
+/* assets/styles.css */
+
+/* Customize the color of the selected value in federation-dropdown-filter dropdown */
+/*#federation-dropdown-filter .Select-value-label {
+    color: white;
+}
+*/
+
+/* Customize the color of the selected value in comp-lifter-filter dropdown */
+#comp-lifter-filter .Select-value-label {
+    color: white;
+}

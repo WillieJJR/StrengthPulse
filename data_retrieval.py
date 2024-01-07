@@ -16,7 +16,7 @@ class PowerliftingDataRetriever:
         self.updated_date = None
 
     '''create function to retrieve csv from website and read as a df'''
-    def retrieve_and_process_csv(self, chunk_size = 500, print_interval=250000):
+    def retrieve_and_process_csv(self, chunk_size = 10000, print_interval=250000):
         response = requests.get(self.zip_url)
 
         if response.status_code == 200:
@@ -84,6 +84,50 @@ class PowerliftingDataRetriever:
         else:
             print('Failed to access the data')
 
+    def process_subset_from_csv(self, filter_date, chunk_size=10000, print_interval=250):
+        response = requests.get(self.zip_url)
+
+        if response.status_code == 200:
+            with zipfile.ZipFile(BytesIO(response.content), 'r') as zipf:
+                csv_file = self.find_csv_file(zipf)
+
+                if csv_file:
+                    chunks = pd.read_csv(zipf.open(csv_file), chunksize=chunk_size)
+                    filtered_chunks = []
+                    total_records_ingested = 0  # Track total records ingested across all chunks
+                    filter_dt = pd.to_datetime(filter_date)
+
+                    # Count total number of chunks
+                    total_records = sum(1 for line in zipf.open(csv_file))
+                    quotient, remainder = divmod(total_records, chunk_size)
+                    total_chunks = quotient + (remainder > 0)
+
+                    for chunk_number, chunk in enumerate(chunks, start=1):
+                        chunk['Date'] = pd.to_datetime(chunk['Date'])
+
+                        # Apply filtering directly during reading
+                        filtered_chunk = chunk[chunk['Country'] == 'USA']
+                        filtered_chunk = filtered_chunk[filtered_chunk['Date'] > filter_dt]
+                        filtered_chunks.append(filtered_chunk)
+
+                        records_ingested = filtered_chunk.shape[0]
+                        total_records_ingested += records_ingested
+
+                        # Print records ingested for the current chunk
+                        print(f"Processing Chunk {chunk_number} of {total_chunks}")
+
+                        # Print total records ingested at regular intervals
+                        if chunk_number % print_interval == 0 or chunk_number == total_chunks:
+                            print(f"New Records Available: {total_records_ingested}")
+
+                    # Concatenate filtered chunks into a single DataFrame
+                    self.csv_data = pd.concat(filtered_chunks, ignore_index=True)
+                    return self.csv_data  # Return the DataFrame
+                else:
+                    print('No CSV file found in the zip archive')
+        else:
+            print('Failed to retrieve the zip file.')
+
     '''create a function to absract the process of collecting the csv'''
     def find_csv_file(self, zipf):
         for file_name in zipf.namelist():
@@ -92,11 +136,15 @@ class PowerliftingDataRetriever:
         return None
 
 
+
+
+
 # Call the data retrieval functions when the application is started
 if __name__ == "__main__":
     data_retriever = PowerliftingDataRetriever()
     data_retriever.retrieve_and_process_csv()  # Get the DataFrame
     data_retriever.retrieve_last_updated_date()
+    data_retriever.process_subset_from_csv()
 
 # if __name__ == "__main__":
 #     data_retriever = PowerliftingDataRetriever()

@@ -3,42 +3,69 @@ from datetime import datetime
 import time
 
 database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
-def etl_openpl_postgres(database_url):
+
+def etl_openpl_postgres(database_url: str) -> None:
+
+    """
+    Perform ETL (Extract, Transform, Load) process from OpenPowerlifting to a PostgreSQL Database.
+
+    Parameters:
+    - database_url (str): The URL of the PostgreSQL database.
+
+    Returns:
+    None
+    """
+
     database_url = database_url
     postgres_instance = PowerliftingDataHandler(database_url)
     data_collector = PowerliftingDataRetriever()
 
-    openpl_updated_dt = datetime.strptime(data_collector.retrieve_last_updated_date().rstrip('.'), '%Y-%m-%d')
-    current_max_dt = datetime.strptime(postgres_instance.collect_max_dt('powerlifting_data'), '%Y-%m-%d')
+    try:
+        openpl_updated_dt = datetime.strptime(data_collector.retrieve_last_updated_date().rstrip('.'), '%Y-%m-%d')
+        current_max_dt = datetime.strptime(postgres_instance.collect_max_dt('powerlifting_data'), '%Y-%m-%d')
+    except ValueError as e:
+        print(f"Error parsing dates: {e}")
+        return
 
-    if openpl_updated_dt is not None and current_max_dt is not None:
-        print(f'''Collected dates.''')
-        time.sleep(1)
-        print(f'''\nOpenPowerlifting has updated data for {openpl_updated_dt}. \nMost recent date in powerlifting_data Database is {current_max_dt}.''')
-        time.sleep(2)
+    print(f"Collected dates.\nOpenPowerlifting was last updated on {openpl_updated_dt}.")
+    time.sleep(1)
 
-        if openpl_updated_dt > current_max_dt:
+    print(f"Most recent date in powerlifting_data Database is {current_max_dt}.")
+    time.sleep(2)
 
-            while True:
-                etl_input = input(f"""Looks like there is newer data to Ingest. Proceed with ETL to Postgres Database? (y/n)""").lower()
+    current_record_count = postgres_instance.collect_cnt_records('powerlifting_data')
+    print(f"Current record count in powerlifting_data Database: {current_record_count}")
+    print("Checking for newly available records to ingest...")
+    time.sleep(1)
 
-                if etl_input == 'y':
-                    print('Ingest code here')
-                    break  # Exit the loop if 'y' is entered
-                elif etl_input == 'n':
-                    print('Cancelling ETL. Data will not be ingested into Postgres Database')
-                    break  # Exit the loop if 'n' is entered
-                else:
-                    print("Invalid input. Please enter 'y' or 'n'.")
+    print("Extracting data from OpenPowerlifting...")
+    source_data = data_collector.process_subset_from_csv(filter_date=current_max_dt)
 
-        else:
-            print('Data is already up to date in powerlifting_data Database.')
+    if len(source_data) > 0:
+        while True:
+            etl_input = input(
+                "Looks like there is newer data to ingest. Proceed with ETL to Postgres Database? (y/n)").lower()
 
+            if etl_input == 'y':
+                print("Loading data into powerlifting_data Database...")
+                postgres_instance.insert_data(csv_data=source_data, table_name='powerlifting_data')
+                print("Data is now available in powerlifting_data Database.")
+                current_record_count = postgres_instance.collect_cnt_records('powerlifting_data')
+                print(f"Current record count in powerlifting_data Database: {current_record_count}")
+                break
+            elif etl_input == 'n':
+                print("Canceling ETL. Data will not be ingested into Postgres Database.")
+                break
+            else:
+                print("Invalid input. Please enter 'y' or 'n'.")
     else:
-        print('Date values are not being returned in the proper format...')
+        print("No additional records available. Data is already up to date in powerlifting_data Database.")
 
 
-print(etl_openpl_postgres(database_url))
+if __name__ == "__main__":
+    etl_openpl_postgres(database_url)
+
+
 
 
 

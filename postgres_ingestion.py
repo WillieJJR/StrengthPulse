@@ -6,12 +6,36 @@ from io import StringIO
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules
 
 class PowerliftingDataHandler:
+    """
+    A class to handle data operations between a PostgreSQL database and Powerlifting data.
+
+    Attributes:
+    - database_url (str): The URL of the PostgreSQL database.
+    - data_retriever (PowerliftingDataRetriever): An instance of PowerliftingDataRetriever for data retrieval.
+    """
+
     def __init__(self, database_url):
+        """
+        Constructor for PowerliftingDataHandler.
+
+        Parameters:
+        - database_url (str): The URL of the PostgreSQL database.
+        """
+
         self.database_url = database_url
         self.data_retriever = PowerliftingDataRetriever()
 
     def get_pg_datatype(pandas_dtype):
-        # Map pandas data types to PostgreSQL data types
+        """
+        Map pandas data types to PostgreSQL data types.
+
+        Parameters:
+        - pandas_dtype: The pandas data type.
+
+        Returns:
+        - str: Corresponding PostgreSQL data type.
+        """
+
         dtype_mapping = {
             'int64': 'INTEGER',
             'float64': 'REAL',
@@ -20,7 +44,18 @@ class PowerliftingDataHandler:
         }
         return dtype_mapping.get(str(pandas_dtype), 'VARCHAR(255)')  # Default to VARCHAR(255) for unknown types
 
-    def create_table(self, csv_data, table_name):
+    def create_table(self, csv_data, table_name)-> None:
+        """
+         Create a PostgreSQL table based on the structure of a DataFrame.
+
+         Parameters:
+         - csv_data (pd.DataFrame): The DataFrame containing the data structure.
+         - table_name (str): The name of the table to be created.
+
+         Returns:
+         None
+         """
+
         # Establish a connection to the PostgreSQL database
         conn = psycopg2.connect(self.database_url)
         cur = conn.cursor()
@@ -80,8 +115,18 @@ class PowerliftingDataHandler:
             conn.commit()
 
 
-    def insert_data(self, csv_data, table_name):
-        # Establish a connection to the PostgreSQL database
+    def insert_data(self, csv_data, table_name)-> None:
+        """
+        Insert data into a PostgreSQL table.
+
+        Parameters:
+        - csv_data (pd.DataFrame): The DataFrame containing the data to be inserted.
+        - table_name (str): The name of the table.
+
+        Returns:
+        None
+        """
+
         conn = psycopg2.connect(self.database_url)
         cur = conn.cursor()
 
@@ -102,7 +147,16 @@ class PowerliftingDataHandler:
 
 
     def fetch_data(self, table_name):
-        # Establish a connection to the PostgreSQL database
+        """
+        Fetch data from a PostgreSQL table.
+
+        Parameters:
+        - table_name (str): The name of the table.
+
+        Returns:
+        - pd.DataFrame: The fetched data.
+        """
+
         conn = psycopg2.connect(self.database_url)
         cur = conn.cursor()
 
@@ -131,7 +185,17 @@ class PowerliftingDataHandler:
         conn.close()
         return result
 
-    def collect_max_dt(self, table_name):
+    def collect_max_dt(self, table_name) -> str:
+        """
+        Collect the maximum date from a PostgreSQL table.
+
+        Parameters:
+        - table_name (str): The name of the table.
+
+        Returns:
+        - str: The maximum date in string format.
+        """
+
         conn = psycopg2.connect(self.database_url)
         cur = conn.cursor()
 
@@ -146,7 +210,31 @@ class PowerliftingDataHandler:
 
         return max_date_str
 
-        return
+
+    def collect_cnt_records(self, table_name) -> int:
+        """
+        Collect the count of records from a PostgreSQL table.
+
+        Parameters:
+        - table_name (str): The name of the table.
+
+        Returns:
+        - int: The count of records.
+        """
+
+        conn = psycopg2.connect(self.database_url)
+        cur = conn.cursor()
+
+        query = f"""SELECT count(*) FROM {table_name};"""
+        cur.execute(query)
+
+        # Fetch the result
+        current_cnt = cur.fetchone()[0]
+
+        cur.close
+        conn.close()
+
+        return current_cnt
 
 
 
@@ -158,7 +246,7 @@ if __name__ == '__main__':
     postgres_instance.insert_data()
     postgres_instance.fetch_data()
     postgres_instance.collect_max_dt()
-
+    postgres_instance.collect_cnt_records()
 
 
 

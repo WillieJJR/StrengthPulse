@@ -24,9 +24,10 @@ class PowerliftingDataHandler:
 
         self.database_url = database_url
         self.data_retriever = PowerliftingDataRetriever()
-
+    @staticmethod
     def get_pg_datatype(pandas_dtype):
         """
+        Doesn't depend on any instance calls so making it a static method
         Map pandas data types to PostgreSQL data types.
 
         Parameters:

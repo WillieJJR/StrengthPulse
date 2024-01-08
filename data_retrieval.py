@@ -146,11 +146,3 @@ if __name__ == "__main__":
     data_retriever.retrieve_last_updated_date()
     data_retriever.process_subset_from_csv()
 
-# if __name__ == "__main__":
-#     data_retriever = PowerliftingDataRetriever()
-#
-#     # Call the method explicitly when needed
-#     data_retriever.retrieve_and_process_csv(chunk_size=500, print_interval=250000)
-#
-#     # Now you can use other methods as needed
-#     data_retriever.retrieve_last_updated_date()

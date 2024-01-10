@@ -756,7 +756,8 @@ def update_kpi_competitions(selected_lifter):
 
             competition_cnt = competition_lifter_df.groupby(['MeetName', 'Date']).size().reset_index(name='Count').shape[0]
 
-            unique_lifter_validation = clean_same_names(competition_lifter_df, 1)
+            # unique_lifter_validation = clean_same_names(competition_lifter_df, 1)
+            unique_lifter_validation = clean_same_names(competition_lifter_df)
             if unique_lifter_validation['persona'].nunique() > 1:
                 competition_cnt = 'Identified more than one lifter'
 
@@ -788,7 +789,8 @@ def update_highest_placement(selected_lifter):
             num_values = pd.to_numeric(placement_lifter_df['Place'], errors='coerce')
             highest_placement = num_values.min()
 
-            unique_lifter_validation = clean_same_names(placement_lifter_df, 1)
+            #unique_lifter_validation = clean_same_names(placement_lifter_df, 1)
+            unique_lifter_validation = clean_same_names(placement_lifter_df)
             if unique_lifter_validation['persona'].nunique() > 1:
                 highest_placement = 'Identified more than one lifter'
 
@@ -830,10 +832,12 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
 
-        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
             cols.append('persona')
-            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
         lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
@@ -876,10 +880,12 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
-        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
             cols.append('persona')
-            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
         lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
@@ -920,10 +926,12 @@ def update_line_chart(selected_lifter, view_type):
             (lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
-        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
             cols.append('persona')
-            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg(
             {'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()

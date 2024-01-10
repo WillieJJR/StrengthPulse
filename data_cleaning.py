@@ -63,7 +63,7 @@ def apply_business_rules(df):
 
     return df
 
-def clean_same_names(df, threshold: int): #assumes a df is cleaned and filtered down to a name
+def clean_same_names_test(df, threshold: int): #assumes a df is cleaned and filtered down to a name
 
     if df is not None:
         if df['Name'].nunique() == 1:
@@ -111,6 +111,21 @@ def clean_same_names(df, threshold: int): #assumes a df is cleaned and filtered 
             print('''There are multiple name values present in the dataframe''')
     else:
         print('''Dataframe is empty''')
+
+def clean_same_names(df):
+
+    # Sort the DataFrame by 'Age' and 'Date'
+    filtered_df = df.sort_values(by=['Age', 'Date'])
+
+    # Calculate prev_date, new_lifter_flag, and personas columns
+    filtered_df['prev_date'] = filtered_df.groupby('Name')['Date'].shift().fillna(filtered_df['Date'])
+    filtered_df['new_lifter_flag'] = (filtered_df['prev_date'] > filtered_df['Date']) | filtered_df['prev_date'].isnull()
+    filtered_df['persona'] = filtered_df.groupby('Name')['new_lifter_flag'].cumsum()
+
+    # Add identifier column
+    filtered_df['identifier'] = filtered_df['new_lifter_flag'].apply(lambda x: 'New Lifter' if x else 'Current Lifter')
+
+    return filtered_df
 
 
 def reduce_mem_usage(df, verbose=True):

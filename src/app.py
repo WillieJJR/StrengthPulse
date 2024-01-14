@@ -835,7 +835,7 @@ def update_line_chart(selected_lifter, view_type):
         # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
         unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
-            cols.append('persona')
+            cols.append('name_with_persona')
             # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
             lifter_stats_df = clean_same_names(lifter_stats_df)
 
@@ -843,7 +843,8 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
             ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
-        facet_col_expression = f'persona' if 'persona' in cols else None
+        facet_col_expression = f'name_with_persona' if 'name_with_persona' in cols else None
+
 
         line_chart_date = px.line(
             lifter_stats_df_agg,
@@ -865,6 +866,8 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        line_chart_date.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
         for i in range(1, len(line_chart_date.data) + 1):
             line_chart_date.update_xaxes(matches=f'x{i}', showgrid=False)
             line_chart_date.update_yaxes(matches=f'y{i}', showgrid=False)
@@ -883,7 +886,7 @@ def update_line_chart(selected_lifter, view_type):
         # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
         unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
-            cols.append('persona')
+            cols.append('name_with_persona')
             # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
             lifter_stats_df = clean_same_names(lifter_stats_df)
 
@@ -891,7 +894,7 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
             ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
-        facet_col_expression = f'persona' if 'persona' in cols else None
+        facet_col_expression = f'name_with_persona' if 'name_with_persona' in cols else None
 
         line_chart_weight = px.line(
             lifter_stats_df_agg,
@@ -913,6 +916,8 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        line_chart_weight.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
         for i in range(1, len(line_chart_weight.data) + 1):
             line_chart_weight.update_xaxes(matches=f'x{i}', showgrid=False)
             line_chart_weight.update_yaxes(matches=f'y{i}', showgrid=False)
@@ -929,7 +934,7 @@ def update_line_chart(selected_lifter, view_type):
         # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
         unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
-            cols.append('persona')
+            cols.append('name_with_persona')
             # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
             lifter_stats_df = clean_same_names(lifter_stats_df)
 
@@ -938,7 +943,7 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
             ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
-        facet_col_expression = f'persona' if 'persona' in cols else None
+        facet_col_expression = f'name_with_persona' if 'name_with_persona' in cols else None
 
         line_chart_age = px.line(
             lifter_stats_df_agg,
@@ -959,6 +964,8 @@ def update_line_chart(selected_lifter, view_type):
             yaxis=dict(showgrid=False),
             hovermode='x'
         )
+
+        line_chart_age.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
         for i in range(1, len(line_chart_age.data) + 1):
             line_chart_age.update_xaxes(matches=f'x{i}', showgrid=False)

@@ -120,10 +120,13 @@ def clean_same_names(df):
     # Calculate prev_date, new_lifter_flag, and personas columns
     filtered_df['prev_date'] = filtered_df.groupby('Name')['Date'].shift().fillna(filtered_df['Date'])
     filtered_df['new_lifter_flag'] = (filtered_df['prev_date'] > filtered_df['Date']) | filtered_df['prev_date'].isnull()
-    filtered_df['persona'] = filtered_df.groupby('Name')['new_lifter_flag'].cumsum()
+    filtered_df['persona'] = filtered_df.groupby('Name')['new_lifter_flag'].cumsum() + 1
 
     # Add identifier column
     filtered_df['identifier'] = filtered_df['new_lifter_flag'].apply(lambda x: 'New Lifter' if x else 'Current Lifter')
+
+    # Create a new column that concatenates Name with persona
+    filtered_df['name_with_persona'] = filtered_df['Name'] + ' #' + filtered_df['persona'].astype(str)
 
     return filtered_df
 

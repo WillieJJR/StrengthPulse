@@ -94,7 +94,8 @@ app.layout = html.Div(children=[
     html.H1("StrengthPulse", style={'textAlign': 'center', 'color': text_color}),
     html.H3("How do you compare?", style={'textAlign': 'center', 'color': text_color}),
 
-    dbc.Tabs(id='tabs', active_tab='tab-features', children=[
+    dbc.Tabs(id='tabs', active_tab='landing-page', children=[
+        dbc.Tab(label='Landing Page', tab_id='landing-page'),
         dbc.Tab(label='Most Current Competition Data', tab_id='comp-data'),
         dbc.Tab(label='Personal Powerlifting Stats', tab_id='user-stats'),
         dbc.Tab(label='Competitor Analytics', tab_id='tab-comparative-analysis'),
@@ -113,6 +114,54 @@ user_data_perc = {}
 estimated_comp_class = {}
 lifter_count = []
 
+def render_landing_page():
+    return html.Div([
+
+        html.H1("StrengthPulse - A Powerlifting Performance Analyzer App"),
+
+        # Overview section
+        html.H2("Overview"),
+        html.P(
+            "This app provides a comprehensive analysis of powerlifting performance, focusing on Squat, Bench, and Deadlift. "
+            "Users can easily benchmark their own lifting numbers against real competitors, gaining insights into their strengths and areas for improvement."
+        ),
+
+        # Features section
+        html.H2("Features"),
+        html.Br(),
+        html.H4("Integrated Data Pipeline: "),
+        html.P("This application has access to data provided by OpenPowerlifting.com and is updated Weekly."),
+        dcc.Link("OpenPowerlifting.com", href='https://openpowerlifting.gitlab.io/opl-csv/',
+                 style={'color': 'white', 'font-size': '16px', 'margin': '20px'}),
+
+        html.H3("Competitor Comparison:"),
+        html.P("Compare your Squat, Bench, and Deadlift numbers with data from actual competitions."),
+
+        html.H3("Performance Benchmarking:"),
+        html.P("Gain valuable insights into your lifting performance relative to other competitors."),
+
+        html.H3("Competitor Perfomrance Analysis:"),
+        html.P("Visualize competitor performance over time, by weight (Kg's), or by Age."),
+
+        # Usage section
+        html.H2("Usage"),
+        html.H3("Squat Analysis:"),
+        html.P("View and compare your squat performance against other competitors."),
+
+        html.H3("Bench Analysis:"),
+        html.P("Analyze your bench press numbers in comparison to competitors."),
+
+        html.H3("Deadlift Analysis:"),
+        html.P("Benchmark your deadlift performance against a pool of competitors."),
+
+        # Note section
+        html.H2("Note"),
+        html.P("This application is currently under development and still working towards enriching this data."),
+
+        # Competition Stats table (Replace with actual table)
+        html.H2("Competition Stats")
+
+    ])
 def render_comp_data():
     return html.Div([
         html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} ', style={'color': text_color}),
@@ -121,33 +170,36 @@ def render_comp_data():
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
         dcc.Dropdown(
             id='federation-dropdown-filter',
-            options=[{'label': federation, 'value': federation} for federation in df['Federation'].unique()],
+            options=[{'label': federation, 'value': federation} for federation in sorted(df['Federation'].unique())],
             multi=True,
             placeholder='Select Federation...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
+        # The gender selection row
+        html.Div([
+            html.P('Please select a Gender: '),
+            dcc.RadioItems(
+                id='sex-filter',
+                options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
+                         {'label': 'Mx', 'value': 'Mx'}],
+                labelStyle={'display': 'inline', 'margin-right': '10px'},
+                style={'background-color': 'transparent', 'margin-bottom': '10px', 'margin-left': '10px'}
+            ),
+        ], style={'display': 'flex', 'flex-direction': 'row'}),
         dcc.Dropdown(
             id='weightclass-filter',
-            options=[{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()],
+            #options=[{'label': weightClass, 'value': weightClass} for weightClass in sorted(df['WeightClassKg'].unique())],
             multi=True,
             placeholder='Select weight class (Kg)...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
         dcc.Dropdown(
             id='ageclass-filter',
-            options=[{'label': ageClass, 'value': ageClass} for ageClass in df['AgeClass'].unique() if
-                     ageClass is not None],
+            #options=[{'label': ageClass, 'value': ageClass} for ageClass in sorted(df['AgeClass'].unique()) if
+            #         ageClass is not None],
             multi=True,
             placeholder='Select age class...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        ),
-        html.P('Please select Gender'),
-        dcc.RadioItems(
-            id='sex-filter',
-            options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
-                     {'label': 'Mx', 'value': 'Mx'}],
-            labelStyle={'display': 'inline', 'margin-right': '10px'},
-            style={'background-color': 'transparent', 'margin-bottom': '10px'}
         ),
         html.Button('Load Data', id='load-data-button'),
         #'''Implement UI for a kg vs lb button here'''
@@ -310,7 +362,9 @@ def render_comparative_analysis():
 
 @app.callback(Output('tab-content', 'children'), [Input('tabs', 'active_tab')])
 def render_content(active_tab):
-    if active_tab == 'comp-data':
+    if active_tab == 'landing-page':
+        return render_landing_page()
+    elif active_tab == 'comp-data':
         return render_comp_data()
     elif active_tab == 'user-stats':
         return render_user_stats()
@@ -324,18 +378,19 @@ def render_content(active_tab):
 @app.callback(
     [Output('weightclass-filter', 'options'),
      Output('ageclass-filter', 'options')],
-    [Input('federation-dropdown-filter', 'value')]
+    [Input('federation-dropdown-filter', 'value'),
+     Input('sex-filter', 'value')]
 )
-def update_dropdown_options(selected_federation):
-    if selected_federation is None:
-        # If no federation is selected, return all options for weightclass and ageclass
-        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()]
-        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in df['AgeClass'].unique() if ageClass is not None]
+def update_dropdown_options(selected_federation, selected_sex):
+    if selected_federation is None or selected_sex is None:
+        # If either federation or sex is not selected, return no options for weightclass and ageclass
+        weightclass_options = []
+        ageclass_options = []
     else:
-        # Filter options based on the selected federation
-        subset_df = df[df['Federation'].isin(selected_federation)]
-        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in subset_df['WeightClassKg'].unique()]
-        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in subset_df['AgeClass'].unique() if ageClass is not None]
+        # Filter options based on both selected federation and sex
+        subset_df = df[(df['Federation'].isin(selected_federation)) & (df['Sex'] == selected_sex)]
+        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in sorted(subset_df['WeightClassKg'].unique(), key=float) if weightClass is not None]
+        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in sorted(subset_df['AgeClass'].unique()) if ageClass is not None]
 
     return weightclass_options, ageclass_options
 
@@ -366,7 +421,8 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
             return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size=10,
                                         style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
                                         style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
-                                        style_data_conditional=highlight_condition)
+                                        style_data_conditional=highlight_condition,
+                                        style_header_conditional=highlight_condition)
 
     # Initially, return an empty div
     return html.Div()

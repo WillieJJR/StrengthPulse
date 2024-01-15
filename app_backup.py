@@ -9,15 +9,18 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
+
 from data_retrieval import PowerliftingDataRetriever
-from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names
-from postgres_ingestion import fetch_data
+#from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names, reduce_mem_usage
+from data_cleaning import clean_same_names
+#from postgres_ingestion import fetch_data
+from postgres_ingestion import PowerliftingDataHandler
 from os.path import dirname, join
 import os
 
 
 data_retriever = PowerliftingDataRetriever()
-css_path = join(dirname(dirname(__file__)), 'assets') + '\styles.css'
+css_path = 'assets/styles.css'
 
 def kpi_one():
     return html.Div([
@@ -100,14 +103,11 @@ app.layout = html.Div(children=[
     html.Div(id='tab-content', style={'margin-top': '20px'}),
 ])
 
-#df = data_retriever.retrieve_and_process_csv()
-database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
 
-df = fetch_data(table_name='powerlifting_data', database_url=database_url)
-#df = data_retriever.retrieve_and_process_csv()
-remove_special_chars(df)
-df = convert_kg_to_lbs(df)
-df = apply_business_rules(df)
+database_url = 'postgresql://williejc:VHR3Llqen4cg@ep-aged-tooth-59253681.us-east-2.aws.neon.tech/powerlifting_db?sslmode=require'
+postgres_instance = PowerliftingDataHandler(database_url)
+df = postgres_instance.fetch_data(table_name='powerlifting_data')
+
 user_data = {}
 user_data_perc = {}
 estimated_comp_class = {}
@@ -362,9 +362,6 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
             # Filter the data based on selections
             filtered_df = df[df['WeightClassKg'].isin(selected_weightclasses) & df['AgeClass'].isin(selected_ageclasses) & (df['Sex'] == selected_sex) & df['Federation'].isin(selected_federation)]
 
-            # Print the length of the filtered DataFrame
-            print("Filtered DataFrame Length:", len(filtered_df))
-
             # Populate the filtered data in the DataTable
             return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size=10,
                                         style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
@@ -391,7 +388,6 @@ def update_kg_lb_button(n_clicks):
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons
         }
-        print('on')
     else:
         lbs_button_style = {
             'borderRadius': '12px',
@@ -400,7 +396,6 @@ def update_kg_lb_button(n_clicks):
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons
         }
-        print('off')
 
     return lbs_button_style
 
@@ -417,7 +412,6 @@ def update_tested_button(n_clicks):
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons
         }
-        print('on')
     else:
         tested_button_style = {
             'borderRadius': '12px',
@@ -426,7 +420,6 @@ def update_tested_button(n_clicks):
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons
         }
-        print('off')
 
     return tested_button_style
 
@@ -464,7 +457,6 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                      'Best3DeadliftKg': deadlift})
 
             if tested % 2 == 0:
-                print('has both tested and non-tested lifters')
 
                 df_weight_match = df[df['Federation'].isin(federation) & (df['Sex'] == sex) & (df['Tested'] == 'Yes')]
                 closest_lower_weight_class = df_weight_match.loc[
@@ -486,8 +478,6 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                     lifter_count.append(len(filtered_df))
                 else:
                     lifter_count.append(len(filtered_df))
-
-                print(closest_age_class)
 
                 estimated_comp_class.update({'ageclass': closest_age_class, 'weightclass': closest_lower_weight_class})
 
@@ -512,8 +502,6 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 else:
                     lifter_count.append(len(filtered_df))
 
-                print(closest_age_class)
-
                 estimated_comp_class.update({'ageclass': closest_age_class, 'weightclass': closest_lower_weight_class})
 
             df_grouped = filtered_df.groupby('Name').agg(squat=('Best3SquatKg', 'max'),
@@ -522,18 +510,19 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                                                          wilks=('Wilks', 'max')
                                                          ).reset_index()
 
-            print(lifter_count)
 
             squat_perc, bench_perc, deadlift_perc = None, None, None
             if squat:
                 if lbs_n_clicks and lbs_n_clicks % 2 == 0:
                     df_grouped['squat'] = df_grouped['squat'].fillna(0)
                     squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'] / float(2.2))
+                    squat_perc_rounded = '{:.1%}'.format(squat_perc / 100)
                     squat_perc_val = squat_perc
                     user_data_perc.update({'squat_perc': squat_perc_val})
                 else:
                     df_grouped['squat'] = df_grouped['squat'].fillna(0)
                     squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'])
+                    squat_perc_rounded = '{:.1%}'.format(squat_perc / 100)
                     squat_perc_val = squat_perc
                     user_data_perc.update({'squat_perc': squat_perc_val})
 
@@ -541,11 +530,13 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 if lbs_n_clicks and lbs_n_clicks % 2 == 0:
                     df_grouped['bench'] = df_grouped['bench'].fillna(0)
                     bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'] / float(2.2))
+                    bench_perc_rounded = '{:.1%}'.format(bench_perc / 100)
                     bench_perc_val = bench_perc
                     user_data_perc.update({'bench_perc': bench_perc_val})
                 else:
                     df_grouped['bench'] = df_grouped['bench'].fillna(0)
                     bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'])
+                    bench_perc_rounded = '{:.1%}'.format(bench_perc / 100)
                     bench_perc_val = bench_perc
                     user_data_perc.update({'bench_perc': bench_perc_val})
 
@@ -553,11 +544,13 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 if lbs_n_clicks and lbs_n_clicks % 2 == 0:
                     df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
                     deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'] / float(2.2))
+                    deadlift_perc_rounded = '{:.1%}'.format(deadlift_perc / 100)
                     deadlift_perc_val = deadlift_perc
                     user_data_perc.update({'deadlift_perc': deadlift_perc_val})
                 else:
                     df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
                     deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'])
+                    deadlift_perc_rounded = '{:.1%}'.format(deadlift_perc / 100)
                     deadlift_perc_val = deadlift_perc
                     user_data_perc.update({'deadlift_perc': deadlift_perc_val})
 
@@ -587,7 +580,7 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                 ], className='callout'),
             ]
 
-            return squat_perc, bench_perc, deadlift_perc, output1, output2, output3
+            return squat_perc_rounded, bench_perc_rounded, deadlift_perc_rounded, output1, output2, output3
 
         else:
             return "Please enter both name and age", name, age, '', '', ''
@@ -606,7 +599,6 @@ def update_squat_chart(n_clicks, squat_vals):
         return go.Figure(), {'display': 'none'}
 
     squat_percentile = user_data_perc.get('squat_perc', 0)
-    print(squat_percentile)
 
     if squat_percentile:
         # Update the gauge chart with the calculated value
@@ -652,7 +644,6 @@ def update_bench_chart(n_clicks, squat_vals):
 
 
     bench_percentile = user_data_perc.get('bench_perc', 0)
-    print(bench_percentile)
 
     if bench_percentile:
         # Update the gauge chart with the calculated value
@@ -697,7 +688,6 @@ def update_deadlift_chart(n_clicks, squat_vals):
 
 
     deadlift_percentile = user_data_perc.get('deadlift_perc', 0)
-    print(deadlift_percentile)
 
     if deadlift_percentile:
         # Update the gauge chart with the calculated value
@@ -766,6 +756,11 @@ def update_kpi_competitions(selected_lifter):
 
             competition_cnt = competition_lifter_df.groupby(['MeetName', 'Date']).size().reset_index(name='Count').shape[0]
 
+            # unique_lifter_validation = clean_same_names(competition_lifter_df, 1)
+            unique_lifter_validation = clean_same_names(competition_lifter_df)
+            if unique_lifter_validation['persona'].nunique() > 1:
+                competition_cnt = 'Identified more than one lifter'
+
 
         else:
 
@@ -790,8 +785,15 @@ def update_highest_placement(selected_lifter):
             (competition_df['Name'] == selected_lifter) & (competition_df['Event'] == 'SBD')]
 
         if not placement_lifter_df.empty:
+
             num_values = pd.to_numeric(placement_lifter_df['Place'], errors='coerce')
             highest_placement = num_values.min()
+
+            #unique_lifter_validation = clean_same_names(placement_lifter_df, 1)
+            unique_lifter_validation = clean_same_names(placement_lifter_df)
+            if unique_lifter_validation['persona'].nunique() > 1:
+                highest_placement = 'Identified more than one lifter'
+
 
             if highest_placement == 1 and len(placement_lifter_df) == 1:
                 meetname, meetdate = placement_lifter_df.iloc[0]['MeetName'], placement_lifter_df.iloc[0]['Date']
@@ -830,14 +832,19 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
 
-        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
-            cols.append('persona')
-            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            cols.append('name_with_persona')
+            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+        lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
+            ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
-        facet_col_expression = f'persona' if 'persona' in cols else None
+        facet_col_expression = f'name_with_persona' if 'name_with_persona' in cols else None
+
 
         line_chart_date = px.line(
             lifter_stats_df_agg,
@@ -859,6 +866,8 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        line_chart_date.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
         for i in range(1, len(line_chart_date.data) + 1):
             line_chart_date.update_xaxes(matches=f'x{i}', showgrid=False)
             line_chart_date.update_yaxes(matches=f'y{i}', showgrid=False)
@@ -874,14 +883,18 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
-        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
-            cols.append('persona')
-            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            cols.append('name_with_persona')
+            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+        lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
+            ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
-        facet_col_expression = f'persona' if 'persona' in cols else None
+        facet_col_expression = f'name_with_persona' if 'name_with_persona' in cols else None
 
         line_chart_weight = px.line(
             lifter_stats_df_agg,
@@ -903,6 +916,8 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        line_chart_weight.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
         for i in range(1, len(line_chart_weight.data) + 1):
             line_chart_weight.update_xaxes(matches=f'x{i}', showgrid=False)
             line_chart_weight.update_yaxes(matches=f'y{i}', showgrid=False)
@@ -916,15 +931,19 @@ def update_line_chart(selected_lifter, view_type):
             (lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
-        unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
+        unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
-            cols.append('persona')
-            lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            cols.append('name_with_persona')
+            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
+            lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg(
             {'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
+        lifter_stats_df_agg[['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']] = lifter_stats_df_agg[
+            ['Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg']].astype(float)
 
-        facet_col_expression = f'persona' if 'persona' in cols else None
+        facet_col_expression = f'name_with_persona' if 'name_with_persona' in cols else None
 
         line_chart_age = px.line(
             lifter_stats_df_agg,
@@ -945,6 +964,8 @@ def update_line_chart(selected_lifter, view_type):
             yaxis=dict(showgrid=False),
             hovermode='x'
         )
+
+        line_chart_age.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
         for i in range(1, len(line_chart_age.data) + 1):
             line_chart_age.update_xaxes(matches=f'x{i}', showgrid=False)

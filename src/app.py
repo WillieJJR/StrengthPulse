@@ -82,7 +82,7 @@ def kpi_five():
         ),
     ])
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, css_path], suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, css_path, dbc.icons.FONT_AWESOME], suppress_callback_exceptions=True)
 server = app.server
 
 # Define colors
@@ -201,11 +201,23 @@ def render_comp_data():
             placeholder='Select age class...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
-        html.Button('Load Data', id='load-data-button'),
+        #html.Button('Load Data', id='load-data-button'),
+        dbc.Button(
+            children=[
+                html.I(className='fa-solid fa-database',
+                       style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8', marginRight='5px')),
+                html.Div('Load Data', style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
+                                                marginTop='-8px'))
+            ],
+            id='load-data-button',
+            n_clicks=0,
+            size='md',
+            style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px',
+                       marginTop='-5px', border='none')
+        ),
         #'''Implement UI for a kg vs lb button here'''
         dcc.Loading(id="loading", type="default", children=[html.Div(id='data-table-container')]),
     ])
-
 
 def render_user_stats():
     return html.Div([
@@ -239,7 +251,17 @@ def render_user_stats():
         dcc.Input(id='squat-input', type='number', placeholder='Competition Squat'),
         dcc.Input(id='bench-input', type='number', placeholder='Competition bench Press'),
         dcc.Input(id='deadlift-input', type='number', placeholder='Competition Deadlift'),
-        html.Button('Add Data', id='add-data-button'),
+        #html.Button('Add Data', id='add-data-button'),
+        dbc.Button(
+            children=[
+                html.I(className='fa-solid fa-plus', style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8', marginRight='5px')),
+                html.Div('Add Data', style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top', marginTop='-8px'))
+            ],
+            id='add-data-button',
+            n_clicks=0,
+            size='md',
+            style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px', marginTop='-5px', border='none')
+        ),
         html.Div(id='output-container-3', className='callout-container'),
 
         html.Div([

@@ -117,54 +117,83 @@ lifter_count = []
 def render_landing_page():
     return html.Div([
 
-        html.H1("StrengthPulse - A Powerlifting Performance Analyzer App"),
+        html.Div([
+            html.H1("StrengthPulse - A Powerlifting Performance Analyzer App", style={'text-align': 'center'}),
+            html.Div([
+                html.P("Welcome to StrengthPulse, your ultimate Powerlifting performance analyzer. "
+                       "Benchmark your lifting numbers, gain insights, and optimize your training.",
+                       style={'text-align': 'center'}),
+            ]),
+        ], style={'margin': '20px'}),
 
-        # Overview section
-        html.H2("Overview"),
-        html.P(
-            "This app provides a comprehensive analysis of powerlifting performance, focusing on Squat, Bench, and Deadlift. "
-            "Users can easily benchmark their own lifting numbers against real competitors, gaining insights into their strengths and areas for improvement."
-        ),
+        # Features section (3 columns) moved down with increased spacing
+        html.Div([
+            html.H2("Features: ", style={'text-align': 'center'}),
+            html.Div([
+                html.Div([
+                    html.H4(["Integrated Data Pipeline: ", html.I(className="fa-solid fa-code-branch")]),
+                    dcc.Markdown(
+                        "- This application has access to data provided by "
+                        + "[OpenPowerlifting.com](https://openpowerlifting.gitlab.io/opl-csv/), "
+                        + "and is updated regularly.",
+                        style={'margin': '20px 0'}
+                    ),
+                ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
+                          'border-radius': '10px'}),
 
-        # Features section
-        html.H2("Features"),
-        html.Br(),
-        html.H4("Integrated Data Pipeline: "),
-        html.P("This application has access to data provided by OpenPowerlifting.com and is updated Weekly."),
-        dcc.Link("OpenPowerlifting.com", href='https://openpowerlifting.gitlab.io/opl-csv/',
-                 style={'color': 'white', 'font-size': '16px', 'margin': '20px'}),
+                html.Div([
+                    html.H4(["Performance Benchmarking: ", html.I(className="fa-solid fa-dumbbell")]),
+                    dcc.Markdown(
+                        "- Compare your Squat, Bench, and Deadlift numbers with data from actual competitions.",
+                        style={'margin': '20px 0'}
+                    )
+                ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
+                          'border-radius': '10px'}),
 
-        html.H3("Competitor Comparison:"),
-        html.P("Compare your Squat, Bench, and Deadlift numbers with data from actual competitions."),
+                html.Div([
+                    html.H4(["Competitor Analytics: ", html.I(className="fa-solid fa-chart-line")]),
+                    dcc.Markdown(
+                        "- Users can select a lifter, and a resulting line chart will display their Squat, Bench, and Deadlift performance. "
+                        "The default view is by the Date of Competition, but users have the flexibility to switch and view the chart by Age or by Weight",
+                        style={'margin': '20px 0'}
+                    )
+                ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
+                          'border-radius': '10px'}),
+            ], style={'display': 'flex', 'justify-content': 'center'}),
 
-        html.H3("Performance Benchmarking:"),
-        html.P("Gain valuable insights into your lifting performance relative to other competitors."),
-
-        html.H3("Competitor Perfomrance Analysis:"),
-        html.P("Visualize competitor performance over time, by weight (Kg's), or by Age."),
-
-        # Usage section
-        html.H2("Usage"),
-        html.H3("Squat Analysis:"),
-        html.P("View and compare your squat performance against other competitors."),
-
-        html.H3("Bench Analysis:"),
-        html.P("Analyze your bench press numbers in comparison to competitors."),
-
-        html.H3("Deadlift Analysis:"),
-        html.P("Benchmark your deadlift performance against a pool of competitors."),
-
-        # Note section
-        html.H2("Note"),
-        html.P("This application is currently under development and still working towards enriching this data."),
-
-        # Competition Stats table (Replace with actual table)
-        html.H2("Competition Stats")
+        ], style={'margin': '20px'}),
+        # html.Br(),
+        # html.Br(),
+        # html.Br(),
+        #
+        # html.H2("Things to Note: "),
+        # html.Br(),
+        # dcc.Markdown(
+        #     """
+        # - Users can select a lifter to view a line chart displaying Squat, Bench, and Deadlift performance, with options to switch by Date, Age, or Weight.
+        #
+        # - Optimization for cost-effectiveness influences data processes, preserving RAM and Compute.
+        #
+        # - Data is filtered for USA lifters, allowing meets outside the USA. Age filtering excludes unknowns and entries under 13 years.
+        #
+        # - Null values in WeighClassKg are filtered for cleaner data representation.
+        #
+        # - Data spans from 2017 onwards, dynamically displaying the past 5 years.
+        #
+        # - The app models data independently for each competition, lacking uniquely identifying values for participants.
+        #
+        # - Solutions for deconflicting competitors are in place, with occasional discrepancies triggering notifications.
+        #
+        # - This app is still under development.
+        # """
+        # ),
+        # html.Br(),
+        html.P("© 2024 StrengthPulse. All rights reserved.", style={'text-align': 'center', 'color': '#7f8c8d'})
 
     ])
 def render_comp_data():
     return html.Div([
-        html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} ', style={'color': text_color}),
+        html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} '),
         html.P('This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
                style={'color': text_color}),
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),

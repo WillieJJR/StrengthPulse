@@ -600,6 +600,7 @@ def update_tested_button(n_clicks):
     State('deadlift-input', 'value'),
 )
 def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, name, age, weight, squat, bench, deadlift):
+
     if n_clicks:
         if name and age and weight and federation:
             if lbs_n_clicks and lbs_n_clicks % 2 == 0:

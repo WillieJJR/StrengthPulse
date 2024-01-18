@@ -82,7 +82,7 @@ def kpi_five():
         ),
     ])
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, css_path, dbc.icons.FONT_AWESOME], suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY, css_path, dbc.icons.FONT_AWESOME], suppress_callback_exceptions=True)
 server = app.server
 
 # Define colors
@@ -91,8 +91,14 @@ link_color = '#007bff'
 
 
 app.layout = html.Div(children=[
-    html.H1("StrengthPulse", style={'textAlign': 'center', 'color': text_color}),
-    html.H3("How do you compare?", style={'textAlign': 'center', 'color': text_color}),
+    html.Div([
+        html.H1("StrengthPulse - A Powerlifting Performance Analyzer App", style={'text-align': 'center'}),
+        html.Div([
+            html.P("Welcome to StrengthPulse, your ultimate Powerlifting performance analyzer. "
+                   "Benchmark your lifting numbers, gain insights, and optimize your training.",
+                   style={'text-align': 'center'}),
+        ]),
+    ], style={'margin': '20px'}),
 
     dbc.Tabs(id='tabs', active_tab='landing-page', children=[
         dbc.Tab(label='Landing Page', tab_id='landing-page'),
@@ -116,15 +122,6 @@ lifter_count = []
 
 def render_landing_page():
     return html.Div([
-
-        html.Div([
-            html.H1("StrengthPulse - A Powerlifting Performance Analyzer App", style={'text-align': 'center'}),
-            html.Div([
-                html.P("Welcome to StrengthPulse, your ultimate Powerlifting performance analyzer. "
-                       "Benchmark your lifting numbers, gain insights, and optimize your training.",
-                       style={'text-align': 'center'}),
-            ]),
-        ], style={'margin': '20px'}),
 
         # Features section (3 columns) moved down with increased spacing
         html.Div([
@@ -159,10 +156,58 @@ def render_landing_page():
                     )
                 ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
                           'border-radius': '10px'}),
-            ], style={'display': 'flex', 'justify-content': 'center'}),
+            ], style={'display': 'flex', 'justify-content': 'center'}), #added the height to increase the size of the features columns
 
         ], style={'margin': '20px'}),
-        # html.Br(),
+
+        html.Div([
+            html.H2("How It Works: ", style={'text-align': 'center'}),
+            html.Div([
+                html.Div([
+                    dcc.Markdown(
+                        "- **Data Exploration Tab:** Explore the rich dataset powering this application, gaining insights into the provided data.\n\n"
+                        "- **Comparative Analysis Tab:** Compare your current statistics with those of fellow competitors in your selected Weight Class, Age Class, and Federation.\n\n"
+                        "- **Competitor Performance Tab:** Select from available competitors to view detailed performance metrics. Customize your view by Date, Bodyweight, or Age for a comprehensive analysis."
+                    ),
+                ], style={'text-align': 'left', 'margin': '20px'}),
+            ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
+                      'border-radius': '10px', 'display': 'flex', 'justify-content': 'center'})
+            ]),
+
+        # Image Section
+        html.Div([
+            html.Img(src='/assets/hiclipart.com (4).png', style={'width': '18%', 'margin': 'auto', 'display': 'block'}),
+        ], style={'text-align': 'center', 'margin': '20px'}),
+
+        # html.Div([
+        #     html.A(html.Button("Get Started", className="button-primary"), href="/features"),
+        # ], style={'text-align': 'center', 'margin': '20px'}),
+        html.Div(
+            dbc.Button(
+                children=[
+                    html.Div('Get Started',
+                             style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
+                                        marginTop='-8px')),
+                    html.I(className='fa-solid fa-circle-right',
+                           style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8',
+                                      marginRight='5px')),
+                ],
+                id='get-started',
+                n_clicks=0,
+                size='md',
+                style=dict(
+                    fontSize='1.7vh',
+                    backgroundColor='rgba(0, 0, 0, 0)',
+                    textAlign='center',
+                    height='32px',
+                    border='none'
+                )
+            ),
+            style=dict(display='flex', justifyContent='center', alignItems='center')
+        ),
+
+
+            # html.Br(),
         # html.Br(),
         # html.Br(),
         #
@@ -188,7 +233,7 @@ def render_landing_page():
         # """
         # ),
         # html.Br(),
-        html.P("© 2024 StrengthPulse. All rights reserved.", style={'text-align': 'center', 'color': '#7f8c8d'})
+        #html.P("© 2024 StrengthPulse. All rights reserved.", style={'text-align': 'center', 'color': '#7f8c8d'})
 
     ])
 def render_comp_data():
@@ -424,6 +469,10 @@ def render_content(active_tab):
     else:
         return html.Div([])
 
+''' Landing Page Tab'''
+##need to add button functionalitty here
+
+
 ''' Competition Data Tab '''
 
 @app.callback(
@@ -514,7 +563,7 @@ def update_tested_button(n_clicks):
     if n_clicks and n_clicks % 2 == 0:
         tested_button_style = {
             'borderRadius': '12px',
-            'background-color': 'rgba(0, 255, 0, 0.5)',
+            'background-color': 'rgba(0, 255, 0, 0.5) ',
             'color': 'white',
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons
@@ -716,7 +765,8 @@ def update_squat_chart(n_clicks, squat_vals):
             title={'text': "Squat", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="rgba(104,111,254,255)"),
+                #bar=dict(color="rgba(104,111,254,255)"),
+                bar=dict(color="rgba(255, 255, 255, 1)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -761,7 +811,8 @@ def update_bench_chart(n_clicks, squat_vals):
             title={'text': "Bench", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="rgba(104,111,254,255)"),
+                #bar=dict(color="rgba(104,111,254,255)"),
+                bar=dict(color="rgba(255, 255, 255, 1.0)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -805,7 +856,8 @@ def update_deadlift_chart(n_clicks, squat_vals):
             title={'text': "Deadlift", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="rgba(104,111,254,255)"),
+                #bar=dict(color="rgba(104,111,254,255)"),
+                bar=dict(color="rgba(255, 255, 255, 1.0)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -964,6 +1016,24 @@ def update_line_chart(selected_lifter, view_type):
             line_shape='linear',  # Choose the line shape (optional)
             hover_data = {'MeetName': True}
         )
+
+        line_color_white_rgba = 'rgba(255, 255, 255, 1.0)'
+        line_color_light_blue_rgba = 'rgba(144, 238, 144, 1.0)'
+        line_color_cyan_rgba = 'rgba(0, 255, 255, 1.0)'
+
+        line_chart_date.update_traces(
+            line_color=line_color_white_rgba,
+            selector={'name': 'Best3SquatKg'}
+        )
+        line_chart_date.update_traces(
+            line_color=line_color_light_blue_rgba,
+            selector={'name': 'Best3BenchKg'}
+        )
+        line_chart_date.update_traces(
+            line_color=line_color_cyan_rgba,
+            selector={'name': 'Best3DeadliftKg'}
+        )
+
         line_chart_date.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
             plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
@@ -1014,6 +1084,24 @@ def update_line_chart(selected_lifter, view_type):
             line_shape='linear',  # Choose the line shape (optional)
             hover_data={'MeetName': True, 'Date': True}
         )
+
+        line_color_white_rgba = 'rgba(255, 255, 255, 1.0)'
+        line_color_light_blue_rgba = 'rgba(144, 238, 144, 1.0)'
+        line_color_cyan_rgba = 'rgba(0, 255, 255, 1.0)'
+
+        line_chart_weight.update_traces(
+            line_color=line_color_white_rgba,
+            selector={'name': 'Best3SquatKg'}
+        )
+        line_chart_weight.update_traces(
+            line_color=line_color_light_blue_rgba,
+            selector={'name': 'Best3BenchKg'}
+        )
+        line_chart_weight.update_traces(
+            line_color=line_color_cyan_rgba,
+            selector={'name': 'Best3DeadliftKg'}
+        )
+
         line_chart_weight.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
             plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
@@ -1063,6 +1151,24 @@ def update_line_chart(selected_lifter, view_type):
             line_shape='linear',  # Choose the line shape (optional)
             hover_data={'MeetName': True, 'Date': True}
         )
+
+        line_color_white_rgba = 'rgba(255, 255, 255, 1.0)'
+        line_color_light_blue_rgba = 'rgba(144, 238, 144, 1.0)'
+        line_color_cyan_rgba = 'rgba(0, 255, 255, 1.0)'
+
+        line_chart_age.update_traces(
+            line_color=line_color_white_rgba,
+            selector={'name': 'Best3SquatKg'}
+        )
+        line_chart_age.update_traces(
+            line_color=line_color_light_blue_rgba,
+            selector={'name': 'Best3BenchKg'}
+        )
+        line_chart_age.update_traces(
+            line_color=line_color_cyan_rgba,
+            selector={'name': 'Best3DeadliftKg'}
+        )
+
         line_chart_age.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
             plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency

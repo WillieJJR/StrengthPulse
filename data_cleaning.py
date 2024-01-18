@@ -1,5 +1,5 @@
 import pandas as pd
-#from postgres_ingestion import fetch_data
+#from postgres_ingestion import PowerliftingDataHandler
 import psycopg2
 from psycopg2 import sql
 from data_retrieval import PowerliftingDataRetriever
@@ -162,7 +162,8 @@ def reduce_mem_usage(df, verbose=True):
 
 '''Scratch Pad'''
 # database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
-# df = fetch_data(table_name='powerlifting_data', database_url=database_url)
+# handler = PowerliftingDataHandler(database_url)
+# df = handler.fetch_data(table_name='powerlifting_data', database_url=database_url)
 # memory_usage = df.memory_usage(deep=True)
 # total_memory_usage = memory_usage.sum() / (1024**2)  # Convert bytes to megabytes
 # print(f'Total memory usage: {total_memory_usage:.2f} MB')

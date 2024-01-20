@@ -9,14 +9,10 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
-
 from data_retrieval import PowerliftingDataRetriever
-#from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names, reduce_mem_usage
 from data_cleaning import clean_same_names
-#from postgres_ingestion import fetch_data
 from postgres_ingestion import PowerliftingDataHandler
-from os.path import dirname, join
-import os
+
 
 
 data_retriever = PowerliftingDataRetriever()
@@ -336,6 +332,19 @@ def render_user_stats():
             size='md',
             style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px', marginTop='-5px', border='none')
         ),
+        dbc.Button(
+            children=[
+                html.I(className='fa-solid fa-eraser',
+                       style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8', marginRight='5px')),
+                html.Div('Clear Data', style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
+                                                 marginTop='-8px', color = 'red'))
+            ],
+            id='clear-data-button',
+            n_clicks=0,
+            size='md',
+            style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px',
+                       marginTop='-5px', border='none')
+        ),
         html.Div(id='output-container-3', className='callout-container'),
 
         html.Div([
@@ -529,6 +538,26 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
 
 
 ''' User Stats Tab '''
+@app.callback(
+    [Output('squat-input', 'value'),
+     Output('bench-input', 'value'),
+     Output('deadlift-input', 'value'),
+     Output('age-input', 'value'),
+     Output('weight-input', 'value')],
+    [Output('add-data-button', 'n_clicks')],
+    [Input('clear-data-button', 'n_clicks')],
+    prevent_initial_call=True
+)
+def clear_input_values(n_clicks_clear):
+    if n_clicks_clear is None:
+        # If the clear button is not clicked, do nothing
+        raise dash.exceptions.PreventUpdate
+    else:
+        user_data.clear()
+        user_data_perc.clear()
+
+    # Clear the values of the input components
+    return None, None, None, None, None, 0  # Set n_clicks to 0
 
 @app.callback(
     Output('lbs-button', 'style'),

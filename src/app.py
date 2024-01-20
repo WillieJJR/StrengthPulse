@@ -299,7 +299,7 @@ def render_user_stats():
 
         dcc.Dropdown(
             id='federation-filter',
-            options=[{'label': Federation, 'value': Federation} for Federation in df['Federation'].unique() if
+            options=[{'label': Federation, 'value': Federation} for Federation in sorted(df['Federation'].unique()) if
                      Federation is not None],
             multi=True,
             placeholder='Select Federation...',
@@ -422,20 +422,23 @@ def render_comparative_analysis():
         html.P('This tab allows the user to display competitors performance based on Date, Weight (kg), or Age.',
                style={'color': text_color}),
         dcc.Markdown('**Note: Due to the absence of unique identifiers in competition data, individuals with the same name may not be fully distinguished. We are actively working to enhance this feature for accuracy'),
+        html.Div([
+            html.P('Please select a Gender: '),
+            dcc.RadioItems(
+                id='sex-filter-t3',
+                options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
+                         {'label': 'Mx', 'value': 'Mx'}],
+                labelStyle={'display': 'inline', 'margin-right': '10px'},
+                style={'background-color': 'transparent', 'margin-bottom': '10px', 'margin-left': '10px'}
+            ),
+        ], style={'display': 'flex', 'flex-direction': 'row'}),
+        html.P('Please select a Lifter: '),
         dcc.Dropdown(
             id='comp-lifter-filter',
             options=[],
             multi=False,
             placeholder='Select Lifter...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'},
-        ),
-        html.P('Please select Gender'),
-        dcc.RadioItems(
-            id='sex-filter-t3',
-            options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
-                     {'label': 'Mx', 'value': 'Mx'}],
-            labelStyle={'display': 'inline', 'margin-right': '10px'},
-            style={'background-color': 'transparent', 'margin-bottom': '10px'}
         ),
         dbc.Row(
             [
@@ -1073,6 +1076,11 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        line_chart_date.update_layout(
+            xaxis_title='Date',  # Set x-axis title
+            yaxis_title='Weight (Kg)'  # Set y-axis title
+        )
+
         line_chart_date.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
         for i in range(1, len(line_chart_date.data) + 1):
@@ -1141,6 +1149,11 @@ def update_line_chart(selected_lifter, view_type):
             hovermode='x'
         )
 
+        line_chart_weight.update_layout(
+            xaxis_title='Bodyweight (Kg)',  # Set x-axis title
+            yaxis_title='Weight (Kg)'  # Set y-axis title
+        )
+
         line_chart_weight.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
         for i in range(1, len(line_chart_weight.data) + 1):
@@ -1206,6 +1219,11 @@ def update_line_chart(selected_lifter, view_type):
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=False),
             hovermode='x'
+        )
+
+        line_chart_age.update_layout(
+            xaxis_title='Age',  # Set x-axis title
+            yaxis_title='Weight (Kg)'  # Set y-axis title
         )
 
         line_chart_age.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))

@@ -9,14 +9,10 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
-
 from data_retrieval import PowerliftingDataRetriever
-#from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules, clean_same_names, reduce_mem_usage
 from data_cleaning import clean_same_names
-#from postgres_ingestion import fetch_data
 from postgres_ingestion import PowerliftingDataHandler
-from os.path import dirname, join
-import os
+
 
 
 data_retriever = PowerliftingDataRetriever()
@@ -82,7 +78,7 @@ def kpi_five():
         ),
     ])
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, css_path], suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY, css_path, dbc.icons.FONT_AWESOME], suppress_callback_exceptions=True)
 server = app.server
 
 # Define colors
@@ -91,10 +87,17 @@ link_color = '#007bff'
 
 
 app.layout = html.Div(children=[
-    html.H1("StrengthPulse", style={'textAlign': 'center', 'color': text_color}),
-    html.H3("How do you compare?", style={'textAlign': 'center', 'color': text_color}),
+    html.Div([
+        html.H1("StrengthPulse - A Powerlifting Performance Analyzer App", style={'text-align': 'center'}),
+        html.Div([
+            html.P("Welcome to StrengthPulse, your ultimate Powerlifting performance analyzer. "
+                   "Benchmark your lifting numbers, gain insights, and optimize your training.",
+                   style={'text-align': 'center'}),
+        ]),
+    ], style={'margin': '20px'}),
 
-    dbc.Tabs(id='tabs', active_tab='tab-features', children=[
+    dbc.Tabs(id='tabs', active_tab='landing-page', children=[
+        dbc.Tab(label='Landing Page', tab_id='landing-page'),
         dbc.Tab(label='Most Current Competition Data', tab_id='comp-data'),
         dbc.Tab(label='Personal Powerlifting Stats', tab_id='user-stats'),
         dbc.Tab(label='Competitor Analytics', tab_id='tab-comparative-analysis'),
@@ -113,47 +116,178 @@ user_data_perc = {}
 estimated_comp_class = {}
 lifter_count = []
 
+def render_landing_page():
+    return html.Div([
+
+        # Features section (3 columns) moved down with increased spacing
+        html.Div([
+            html.H2("Features: ", style={'text-align': 'center'}),
+            html.Div([
+                html.Div([
+                    html.H4(["Integrated Data Pipeline: ", html.I(className="fa-solid fa-code-branch")]),
+                    dcc.Markdown(
+                        "- This application has access to data provided by "
+                        + "[OpenPowerlifting.com](https://openpowerlifting.gitlab.io/opl-csv/), "
+                        + "and is updated regularly.",
+                        style={'margin': '20px 0'}
+                    ),
+                ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
+                          'border-radius': '10px'}),
+
+                html.Div([
+                    html.H4(["Performance Benchmarking: ", html.I(className="fa-solid fa-dumbbell")]),
+                    dcc.Markdown(
+                        "- Compare your Squat, Bench, and Deadlift numbers with data from actual competitions.",
+                        style={'margin': '20px 0'}
+                    )
+                ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
+                          'border-radius': '10px'}),
+
+                html.Div([
+                    html.H4(["Competitor Analytics: ", html.I(className="fa-solid fa-chart-line")]),
+                    dcc.Markdown(
+                        "- Users can select a lifter, and a resulting line chart will display their Squat, Bench, and Deadlift performance. "
+                        "The default view is by the Date of Competition, but users have the flexibility to switch and view the chart by Age or by Weight",
+                        style={'margin': '20px 0'}
+                    )
+                ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
+                          'border-radius': '10px'}),
+            ], style={'display': 'flex', 'justify-content': 'center'}), #added the height to increase the size of the features columns
+
+        ], style={'margin': '20px'}),
+
+        html.Div([
+            html.H2("How It Works: ", style={'text-align': 'center'}),
+            html.Div([
+                html.Div([
+                    dcc.Markdown(
+                        "- **Data Exploration Tab:** Explore the rich dataset powering this application, gaining insights into the provided data.\n\n"
+                        "- **Comparative Analysis Tab:** Compare your current statistics with those of fellow competitors in your selected Weight Class, Age Class, and Federation.\n\n"
+                        "- **Competitor Performance Tab:** Select from available competitors to view detailed performance metrics. Customize your view by Date, Bodyweight, or Age for a comprehensive analysis."
+                    ),
+                ], style={'text-align': 'left', 'margin': '20px'}),
+            ], style={'flex': '1', 'margin': '20px', 'padding': '20px', 'border': '1px solid #ecf0f1',
+                      'border-radius': '10px', 'display': 'flex', 'justify-content': 'center'})
+            ]),
+
+        # Image Section
+        html.Div([
+            html.Img(src='/assets/hiclipart.com (4).png', style={'width': '18%', 'margin': 'auto', 'display': 'block'}),
+        ], style={'text-align': 'center', 'margin': '20px'}),
+
+        # html.Div([
+        #     html.A(html.Button("Get Started", className="button-primary"), href="/features"),
+        # ], style={'text-align': 'center', 'margin': '20px'}),
+        html.Div(
+            dbc.Button(
+                children=[
+                    html.Div('Get Started',
+                             style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
+                                        marginTop='-8px')),
+                    html.I(className='fa-solid fa-circle-right',
+                           style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8',
+                                      marginRight='5px')),
+                ],
+                id='get-started',
+                n_clicks=0,
+                size='md',
+                style=dict(
+                    fontSize='1.7vh',
+                    backgroundColor='rgba(0, 0, 0, 0)',
+                    textAlign='center',
+                    height='32px',
+                    border='none'
+                )
+            ),
+            style=dict(display='flex', justifyContent='center', alignItems='center')
+        ),
+
+
+            # html.Br(),
+        # html.Br(),
+        # html.Br(),
+        #
+        # html.H2("Things to Note: "),
+        # html.Br(),
+        # dcc.Markdown(
+        #     """
+        # - Users can select a lifter to view a line chart displaying Squat, Bench, and Deadlift performance, with options to switch by Date, Age, or Weight.
+        #
+        # - Optimization for cost-effectiveness influences data processes, preserving RAM and Compute.
+        #
+        # - Data is filtered for USA lifters, allowing meets outside the USA. Age filtering excludes unknowns and entries under 13 years.
+        #
+        # - Null values in WeighClassKg are filtered for cleaner data representation.
+        #
+        # - Data spans from 2017 onwards, dynamically displaying the past 5 years.
+        #
+        # - The app models data independently for each competition, lacking uniquely identifying values for participants.
+        #
+        # - Solutions for deconflicting competitors are in place, with occasional discrepancies triggering notifications.
+        #
+        # - This app is still under development.
+        # """
+        # ),
+        # html.Br(),
+        #html.P("© 2024 StrengthPulse. All rights reserved.", style={'text-align': 'center', 'color': '#7f8c8d'})
+
+    ])
 def render_comp_data():
     return html.Div([
-        html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} ', style={'color': text_color}),
+        html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} '),
         html.P('This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
                style={'color': text_color}),
         dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
         dcc.Dropdown(
             id='federation-dropdown-filter',
-            options=[{'label': federation, 'value': federation} for federation in df['Federation'].unique()],
+            options=[{'label': federation, 'value': federation} for federation in sorted(df['Federation'].unique())],
             multi=True,
             placeholder='Select Federation...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
+        # The gender selection row
+        html.Div([
+            html.P('Please select a Gender: '),
+            dcc.RadioItems(
+                id='sex-filter',
+                options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
+                         {'label': 'Mx', 'value': 'Mx'}],
+                labelStyle={'display': 'inline', 'margin-right': '10px'},
+                style={'background-color': 'transparent', 'margin-bottom': '10px', 'margin-left': '10px'}
+            ),
+        ], style={'display': 'flex', 'flex-direction': 'row'}),
         dcc.Dropdown(
             id='weightclass-filter',
-            options=[{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()],
+            #options=[{'label': weightClass, 'value': weightClass} for weightClass in sorted(df['WeightClassKg'].unique())],
             multi=True,
             placeholder='Select weight class (Kg)...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
         dcc.Dropdown(
             id='ageclass-filter',
-            options=[{'label': ageClass, 'value': ageClass} for ageClass in df['AgeClass'].unique() if
-                     ageClass is not None],
+            #options=[{'label': ageClass, 'value': ageClass} for ageClass in sorted(df['AgeClass'].unique()) if
+            #         ageClass is not None],
             multi=True,
             placeholder='Select age class...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
-        html.P('Please select Gender'),
-        dcc.RadioItems(
-            id='sex-filter',
-            options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
-                     {'label': 'Mx', 'value': 'Mx'}],
-            labelStyle={'display': 'inline', 'margin-right': '10px'},
-            style={'background-color': 'transparent', 'margin-bottom': '10px'}
+        #html.Button('Load Data', id='load-data-button'),
+        dbc.Button(
+            children=[
+                html.I(className='fa-solid fa-database',
+                       style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8', marginRight='5px')),
+                html.Div('Load Data', style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
+                                                marginTop='-8px'))
+            ],
+            id='load-data-button',
+            n_clicks=0,
+            size='md',
+            style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px',
+                       marginTop='-5px', border='none')
         ),
-        html.Button('Load Data', id='load-data-button'),
         #'''Implement UI for a kg vs lb button here'''
         dcc.Loading(id="loading", type="default", children=[html.Div(id='data-table-container')]),
     ])
-
 
 def render_user_stats():
     return html.Div([
@@ -165,7 +299,7 @@ def render_user_stats():
 
         dcc.Dropdown(
             id='federation-filter',
-            options=[{'label': Federation, 'value': Federation} for Federation in df['Federation'].unique() if
+            options=[{'label': Federation, 'value': Federation} for Federation in sorted(df['Federation'].unique()) if
                      Federation is not None],
             multi=True,
             placeholder='Select Federation...',
@@ -187,7 +321,30 @@ def render_user_stats():
         dcc.Input(id='squat-input', type='number', placeholder='Competition Squat'),
         dcc.Input(id='bench-input', type='number', placeholder='Competition bench Press'),
         dcc.Input(id='deadlift-input', type='number', placeholder='Competition Deadlift'),
-        html.Button('Add Data', id='add-data-button'),
+        #html.Button('Add Data', id='add-data-button'),
+        dbc.Button(
+            children=[
+                html.I(className='fa-solid fa-plus', style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8', marginRight='5px')),
+                html.Div('Add Data', style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top', marginTop='-8px'))
+            ],
+            id='add-data-button',
+            n_clicks=0,
+            size='md',
+            style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px', marginTop='-5px', border='none')
+        ),
+        dbc.Button(
+            children=[
+                html.I(className='fa-solid fa-eraser',
+                       style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8', marginRight='5px')),
+                html.Div('Clear Data', style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
+                                                 marginTop='-8px', color = 'red'))
+            ],
+            id='clear-data-button',
+            n_clicks=0,
+            size='md',
+            style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px',
+                       marginTop='-5px', border='none')
+        ),
         html.Div(id='output-container-3', className='callout-container'),
 
         html.Div([
@@ -265,20 +422,23 @@ def render_comparative_analysis():
         html.P('This tab allows the user to display competitors performance based on Date, Weight (kg), or Age.',
                style={'color': text_color}),
         dcc.Markdown('**Note: Due to the absence of unique identifiers in competition data, individuals with the same name may not be fully distinguished. We are actively working to enhance this feature for accuracy'),
+        html.Div([
+            html.P('Please select a Gender: '),
+            dcc.RadioItems(
+                id='sex-filter-t3',
+                options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
+                         {'label': 'Mx', 'value': 'Mx'}],
+                labelStyle={'display': 'inline', 'margin-right': '10px'},
+                style={'background-color': 'transparent', 'margin-bottom': '10px', 'margin-left': '10px'}
+            ),
+        ], style={'display': 'flex', 'flex-direction': 'row'}),
+        html.P('Please select a Lifter: '),
         dcc.Dropdown(
             id='comp-lifter-filter',
             options=[],
             multi=False,
             placeholder='Select Lifter...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'},
-        ),
-        html.P('Please select Gender'),
-        dcc.RadioItems(
-            id='sex-filter-t3',
-            options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
-                     {'label': 'Mx', 'value': 'Mx'}],
-            labelStyle={'display': 'inline', 'margin-right': '10px'},
-            style={'background-color': 'transparent', 'margin-bottom': '10px'}
         ),
         dbc.Row(
             [
@@ -310,7 +470,9 @@ def render_comparative_analysis():
 
 @app.callback(Output('tab-content', 'children'), [Input('tabs', 'active_tab')])
 def render_content(active_tab):
-    if active_tab == 'comp-data':
+    if active_tab == 'landing-page':
+        return render_landing_page()
+    elif active_tab == 'comp-data':
         return render_comp_data()
     elif active_tab == 'user-stats':
         return render_user_stats()
@@ -319,23 +481,28 @@ def render_content(active_tab):
     else:
         return html.Div([])
 
+''' Landing Page Tab'''
+##need to add button functionalitty here
+
+
 ''' Competition Data Tab '''
 
 @app.callback(
     [Output('weightclass-filter', 'options'),
      Output('ageclass-filter', 'options')],
-    [Input('federation-dropdown-filter', 'value')]
+    [Input('federation-dropdown-filter', 'value'),
+     Input('sex-filter', 'value')]
 )
-def update_dropdown_options(selected_federation):
-    if selected_federation is None:
-        # If no federation is selected, return all options for weightclass and ageclass
-        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in df['WeightClassKg'].unique()]
-        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in df['AgeClass'].unique() if ageClass is not None]
+def update_dropdown_options(selected_federation, selected_sex):
+    if selected_federation is None or selected_sex is None:
+        # If either federation or sex is not selected, return no options for weightclass and ageclass
+        weightclass_options = []
+        ageclass_options = []
     else:
-        # Filter options based on the selected federation
-        subset_df = df[df['Federation'].isin(selected_federation)]
-        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in subset_df['WeightClassKg'].unique()]
-        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in subset_df['AgeClass'].unique() if ageClass is not None]
+        # Filter options based on both selected federation and sex
+        subset_df = df[(df['Federation'].isin(selected_federation)) & (df['Sex'] == selected_sex)]
+        weightclass_options = [{'label': weightClass, 'value': weightClass} for weightClass in sorted(subset_df['WeightClassKg'].unique(), key=float) if weightClass is not None]
+        ageclass_options = [{'label': ageClass, 'value': ageClass} for ageClass in sorted(subset_df['AgeClass'].unique()) if ageClass is not None]
 
     return weightclass_options, ageclass_options
 
@@ -366,13 +533,34 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
             return dash_table.DataTable(filtered_df.to_dict('records'), [{"name": i, "id": i} for i in filtered_df.columns], page_size=10,
                                         style_data={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
                                         style_header={'backgroundColor': 'rgba(0,0,0,0)', 'color': 'white'},
-                                        style_data_conditional=highlight_condition)
+                                        style_data_conditional=highlight_condition,
+                                        style_header_conditional=highlight_condition)
 
     # Initially, return an empty div
     return html.Div()
 
 
 ''' User Stats Tab '''
+@app.callback(
+    [Output('squat-input', 'value'),
+     Output('bench-input', 'value'),
+     Output('deadlift-input', 'value'),
+     Output('age-input', 'value'),
+     Output('weight-input', 'value')],
+    [Output('add-data-button', 'n_clicks')],
+    [Input('clear-data-button', 'n_clicks')],
+    prevent_initial_call=True
+)
+def clear_input_values(n_clicks_clear):
+    if n_clicks_clear is None:
+        # If the clear button is not clicked, do nothing
+        raise dash.exceptions.PreventUpdate
+    else:
+        user_data.clear()
+        user_data_perc.clear()
+
+    # Clear the values of the input components
+    return None, None, None, None, None, 0  # Set n_clicks to 0
 
 @app.callback(
     Output('lbs-button', 'style'),
@@ -407,7 +595,7 @@ def update_tested_button(n_clicks):
     if n_clicks and n_clicks % 2 == 0:
         tested_button_style = {
             'borderRadius': '12px',
-            'background-color': 'rgba(0, 255, 0, 0.5)',
+            'background-color': 'rgba(0, 255, 0, 0.5) ',
             'color': 'white',
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons
@@ -444,6 +632,7 @@ def update_tested_button(n_clicks):
     State('deadlift-input', 'value'),
 )
 def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, name, age, weight, squat, bench, deadlift):
+
     if n_clicks:
         if name and age and weight and federation:
             if lbs_n_clicks and lbs_n_clicks % 2 == 0:
@@ -609,7 +798,8 @@ def update_squat_chart(n_clicks, squat_vals):
             title={'text': "Squat", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="rgba(104,111,254,255)"),
+                #bar=dict(color="rgba(104,111,254,255)"),
+                bar=dict(color="rgba(255, 255, 255, 1)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -654,7 +844,8 @@ def update_bench_chart(n_clicks, squat_vals):
             title={'text': "Bench", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="rgba(104,111,254,255)"),
+                #bar=dict(color="rgba(104,111,254,255)"),
+                bar=dict(color="rgba(255, 255, 255, 1.0)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -698,7 +889,8 @@ def update_deadlift_chart(n_clicks, squat_vals):
             title={'text': "Deadlift", 'font': {'color': 'white'}},
             gauge=dict(
                 axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
-                bar=dict(color="rgba(104,111,254,255)"),
+                #bar=dict(color="rgba(104,111,254,255)"),
+                bar=dict(color="rgba(255, 255, 255, 1.0)"),
                 bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
@@ -857,6 +1049,24 @@ def update_line_chart(selected_lifter, view_type):
             line_shape='linear',  # Choose the line shape (optional)
             hover_data = {'MeetName': True}
         )
+
+        line_color_white_rgba = 'rgba(255, 255, 255, 1.0)'
+        line_color_light_blue_rgba = 'rgba(144, 238, 144, 1.0)'
+        line_color_cyan_rgba = 'rgba(0, 255, 255, 1.0)'
+
+        line_chart_date.update_traces(
+            line_color=line_color_white_rgba,
+            selector={'name': 'Best3SquatKg'}
+        )
+        line_chart_date.update_traces(
+            line_color=line_color_light_blue_rgba,
+            selector={'name': 'Best3BenchKg'}
+        )
+        line_chart_date.update_traces(
+            line_color=line_color_cyan_rgba,
+            selector={'name': 'Best3DeadliftKg'}
+        )
+
         line_chart_date.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
             plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
@@ -864,6 +1074,11 @@ def update_line_chart(selected_lifter, view_type):
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=False),
             hovermode='x'
+        )
+
+        line_chart_date.update_layout(
+            xaxis_title='Date',  # Set x-axis title
+            yaxis_title='Weight (Kg)'  # Set y-axis title
         )
 
         line_chart_date.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
@@ -907,6 +1122,24 @@ def update_line_chart(selected_lifter, view_type):
             line_shape='linear',  # Choose the line shape (optional)
             hover_data={'MeetName': True, 'Date': True}
         )
+
+        line_color_white_rgba = 'rgba(255, 255, 255, 1.0)'
+        line_color_light_blue_rgba = 'rgba(144, 238, 144, 1.0)'
+        line_color_cyan_rgba = 'rgba(0, 255, 255, 1.0)'
+
+        line_chart_weight.update_traces(
+            line_color=line_color_white_rgba,
+            selector={'name': 'Best3SquatKg'}
+        )
+        line_chart_weight.update_traces(
+            line_color=line_color_light_blue_rgba,
+            selector={'name': 'Best3BenchKg'}
+        )
+        line_chart_weight.update_traces(
+            line_color=line_color_cyan_rgba,
+            selector={'name': 'Best3DeadliftKg'}
+        )
+
         line_chart_weight.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
             plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
@@ -914,6 +1147,11 @@ def update_line_chart(selected_lifter, view_type):
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=False),
             hovermode='x'
+        )
+
+        line_chart_weight.update_layout(
+            xaxis_title='Bodyweight (Kg)',  # Set x-axis title
+            yaxis_title='Weight (Kg)'  # Set y-axis title
         )
 
         line_chart_weight.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
@@ -956,6 +1194,24 @@ def update_line_chart(selected_lifter, view_type):
             line_shape='linear',  # Choose the line shape (optional)
             hover_data={'MeetName': True, 'Date': True}
         )
+
+        line_color_white_rgba = 'rgba(255, 255, 255, 1.0)'
+        line_color_light_blue_rgba = 'rgba(144, 238, 144, 1.0)'
+        line_color_cyan_rgba = 'rgba(0, 255, 255, 1.0)'
+
+        line_chart_age.update_traces(
+            line_color=line_color_white_rgba,
+            selector={'name': 'Best3SquatKg'}
+        )
+        line_chart_age.update_traces(
+            line_color=line_color_light_blue_rgba,
+            selector={'name': 'Best3BenchKg'}
+        )
+        line_chart_age.update_traces(
+            line_color=line_color_cyan_rgba,
+            selector={'name': 'Best3DeadliftKg'}
+        )
+
         line_chart_age.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
             plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
@@ -963,6 +1219,11 @@ def update_line_chart(selected_lifter, view_type):
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=False),
             hovermode='x'
+        )
+
+        line_chart_age.update_layout(
+            xaxis_title='Age',  # Set x-axis title
+            yaxis_title='Weight (Kg)'  # Set y-axis title
         )
 
         line_chart_age.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))

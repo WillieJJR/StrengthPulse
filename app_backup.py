@@ -234,60 +234,135 @@ def render_landing_page():
     ])
 def render_comp_data():
     return html.Div([
-        html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} '),
-        html.P('This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
-               style={'color': text_color}),
-        dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
-        dcc.Dropdown(
-            id='federation-dropdown-filter',
-            options=[{'label': federation, 'value': federation} for federation in sorted(df['Federation'].unique())],
-            multi=True,
-            placeholder='Select Federation...',
-            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        ),
-        # The gender selection row
-        html.Div([
-            html.P('Please select a Gender: '),
-            dcc.RadioItems(
-                id='sex-filter',
-                options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
-                         {'label': 'Mx', 'value': 'Mx'}],
-                labelStyle={'display': 'inline', 'margin-right': '10px'},
-                style={'background-color': 'transparent', 'margin-bottom': '10px', 'margin-left': '10px'}
-            ),
-        ], style={'display': 'flex', 'flex-direction': 'row'}),
-        dcc.Dropdown(
-            id='weightclass-filter',
-            #options=[{'label': weightClass, 'value': weightClass} for weightClass in sorted(df['WeightClassKg'].unique())],
-            multi=True,
-            placeholder='Select weight class (Kg)...',
-            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        ),
-        dcc.Dropdown(
-            id='ageclass-filter',
-            #options=[{'label': ageClass, 'value': ageClass} for ageClass in sorted(df['AgeClass'].unique()) if
-            #         ageClass is not None],
-            multi=True,
-            placeholder='Select age class...',
-            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        ),
-        #html.Button('Load Data', id='load-data-button'),
-        dbc.Button(
-            children=[
-                html.I(className='fa-solid fa-database',
-                       style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8', marginRight='5px')),
-                html.Div('Load Data', style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
-                                                marginTop='-8px'))
-            ],
-            id='load-data-button',
-            n_clicks=0,
-            size='md',
-            style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px',
-                       marginTop='-5px', border='none')
-        ),
-        #'''Implement UI for a kg vs lb button here'''
-        dcc.Loading(id="loading", type="default", children=[html.Div(id='data-table-container')]),
-    ])
+        # Row for filter components and plot
+        dbc.Row([
+            # Column for filter components
+            dbc.Col([
+                # Container for Gender filter
+                dbc.Container([
+                    html.Label('Please select a Gender..'),
+                    dcc.RadioItems(
+                        id='sex-filter-t2',
+                        options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
+                                 {'label': 'Mx', 'value': 'Mx'}],
+                        labelStyle={'display': 'block'},
+                        style={'background-color': 'transparent', 'margin-bottom': '20px'}
+                    ),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                dbc.Container([
+                    html.Label('Estimated total (Squat, Bench Press, and Deadlift)..'),
+                    html.Div([
+                        dcc.Input(
+                            id='total-rangen',
+                            type='number',
+                            value=500,
+                            placeholder='Min',
+                            style={'width': '100%', 'display': 'inline-block', 'margin-right': '5%'}
+                        ),
+                    ]),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                # Container for Federation filter
+                dbc.Container([
+                    html.Label('Please select a Federation..'),
+                    dcc.Dropdown(
+                        id='federation-filter-t2',
+                        options=[{'label': Federation, 'value': Federation} for Federation in
+                                 sorted(df['Federation'].unique()) if
+                                 Federation is not None],
+                        multi=True,
+                        placeholder='Select Federation...',
+                        style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px',
+                               'background-color': 'transparent',
+                               'color': 'black'}
+                    ),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                dbc.Container([
+                    html.Label('Please select a State..'),
+                    dcc.Dropdown(
+                        id='federation-state-t2',
+                        options=[{'label': state, 'value': state} for state in
+                                 sorted(filter(None, df['MeetState'].unique())) if
+                                 state is not None],
+                        multi=True,
+                        placeholder='Select State...',
+                        style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px',
+                               'background-color': 'transparent',
+                               'color': 'black'}
+                    ),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                html.Div(
+                    dbc.Button(
+                        children=[
+                            html.Div('Calculate',
+                                     style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='bottom',
+                                                marginTop='-8px', fontSize='2.5vh')),
+                            html.I(className='fa-solid fa-square-poll-vertical',
+                                   style=dict(display='inline-block', verticalAlign='center', lineHeight='0.8',
+                                              marginRight='5px', fontSize='2.5vh')),
+                        ],
+                        id='calculate-button',
+                        n_clicks=0,
+                        size='md',
+                        style=dict(
+                            fontSize='1.7vh',
+                            backgroundColor='rgba(0, 0, 0, 0)',
+                            textAlign='center',
+                            height='32px',
+                            border='none'
+                        )
+                    ),
+                    style=dict(display='flex', justifyContent='flex-start', alignItems='center')
+                ),
+
+                html.Br(),
+                html.Br(),
+
+                dbc.Container([
+                    html.Label('Your Estimated Strength Level is..'),
+                    html.Div(
+                        id='kpi-box',
+                        children=[
+                            html.Div(
+                                id='kpi-text',
+                                children="",
+                                style={
+                                    'background-color': 'white',
+                                    'border-radius': '10px',
+                                    'padding': '20px',
+                                    'text-align': 'center',
+                                    'box-shadow': '0 0 10px rgba(0, 0, 0, 0.1)',
+                                    'font-size': '18px',
+                                    'font-weight': 'bold',
+                                    'color': 'black',
+                                    'margin-top': '10px'
+                                    #'visibility': 'hidden',  # Initial visibility set to hidden
+                                }
+                            ),
+                        ],
+                        style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}  # Optional: Add margin for better spacing
+                    ),
+                ])
+
+                # Container for Total range filter
+            ], width=2, style={'height': '100vh'}),  # Set the width to 4 (1/3 of the screen)
+
+            # Column for the plot
+            dbc.Col([
+                # Add your plot component here
+                dcc.Graph(
+                    id='your-plot-id',
+                    # Add plot properties and data here
+                ),
+            ], width=10, style={'height': '100vh', 'display': 'none'}),  # Set the width to 8 (2/3 of the screen)
+        ]),
+
+        # Blank container for additional content (to be filled with KPI later)
+        dbc.Container(id='additional-content-container', className='p-3'),
+    ], style={'height': '100vh'})
 
 def render_user_stats():
     return html.Div([
@@ -539,6 +614,28 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
     # Initially, return an empty div
     return html.Div()
 
+
+@app.callback(
+    [Output('kpi-text', 'children'),
+     Output('kpi-box', 'style')],
+    [Input('calculate-button', 'n_clicks')]
+)
+def update_kpi_text(n_clicks):
+    if n_clicks:
+        # Your logic to generate or fetch KPI data
+        kpi_value = 'Advanced'
+
+        # Format the KPI value as text
+        kpi_text = f"KPI: {kpi_value}"
+
+        # Make the box visible
+        updated_style = {'visibility': 'visible'}
+    else:
+        # If button is not clicked, keep the box hidden
+        kpi_text = ""
+        updated_style = {'visibility': 'hidden'}
+
+    return kpi_text, updated_style
 
 ''' User Stats Tab '''
 @app.callback(

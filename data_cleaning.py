@@ -159,6 +159,26 @@ def reduce_mem_usage(df, verbose=True):
     if verbose: print('Mem. usage decreased to {:5.2f} Mb ({:.1f}% reduction)'.format(end_mem, 100 * (start_mem - end_mem) / start_mem))
     return df
 
+def calculate_wilks(gender: str, bodyweight: float, total: float) -> float:
+    coefficients = {
+        'm': [-216.0475144, 16.2606339, -0.002388645, -0.00113732, 7.01863e-6, -1.291e-8],
+        'f': [594.31747775582, -27.23842536447, 0.82112226871, -0.00930733913, 4.731582e-5, -9.054e-8]
+    }
+
+    gender = gender.lower()
+
+    if gender not in coefficients:
+        raise ValueError("Invalid gender. Use 'male' or 'female'.")
+
+    b0, b1, b2, b3, b4, b5 = coefficients[gender]
+
+    wilks_coefficient = 500 / (
+            b0 + (b1 * bodyweight) + (b2 * bodyweight ** 2) + (b3 * bodyweight ** 3) + (b4 * bodyweight ** 4) + (
+            b5 * bodyweight ** 5)
+    )
+
+    return wilks_coefficient * total
+
 
 '''Scratch Pad'''
 # database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'

@@ -10,7 +10,7 @@ import dash_bootstrap_components as dbc
 from datetime import datetime
 from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
-from data_cleaning import clean_same_names
+from data_cleaning import clean_same_names, calculate_wilks, wilks
 from postgres_ingestion import PowerliftingDataHandler
 
 
@@ -111,6 +111,7 @@ database_url = 'postgresql://williejc:VHR3Llqen4cg@ep-aged-tooth-59253681.us-eas
 postgres_instance = PowerliftingDataHandler(database_url)
 df = postgres_instance.fetch_data(table_name='powerlifting_data')
 
+user_total = {}
 user_data = {}
 user_data_perc = {}
 estimated_comp_class = {}
@@ -251,13 +252,25 @@ def render_comp_data():
                 ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
 
                 dbc.Container([
-                    html.Label('Estimated total (Squat, Bench Press, and Deadlift)..'),
+                    html.Label('Estimated total in Kg (Squat, Bench Press, and Deadlift)..'),
                     html.Div([
                         dcc.Input(
-                            id='total-rangen',
+                            id='total-filter',
                             type='number',
                             value=500,
-                            placeholder='Min',
+                            placeholder='Total (Kg)',
+                            style={'width': '100%', 'display': 'inline-block', 'margin-right': '5%'}
+                        ),
+                    ]),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                dbc.Container([
+                    html.Label('Estimated Bodyweight in Kg..'),
+                    html.Div([
+                        dcc.Input(
+                            id='bodyweight-filter-t2',
+                            type='number',
+                            placeholder='Bodyweight (Kg)',
                             style={'width': '100%', 'display': 'inline-block', 'margin-right': '5%'}
                         ),
                     ]),
@@ -618,12 +631,25 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
 @app.callback(
     [Output('kpi-text', 'children'),
      Output('kpi-box', 'style')],
-    [Input('calculate-button', 'n_clicks')]
+    [Input('calculate-button', 'n_clicks'),
+     Input('sex-filter-t2', 'value'),
+     Input('total-filter', 'value'),
+     Input('bodyweight-filter-t2', 'value')]
 )
-def update_kpi_text(n_clicks):
+def update_kpi_text(n_clicks, gender, total, bw):
     if n_clicks:
-        # Your logic to generate or fetch KPI data
-        kpi_value = 'Advanced'
+
+        wilks_e = calculate_wilks(gender=gender, total=total, bodyweight=bw)
+        print(wilks_e)
+
+        if wilks_e < 300:
+            kpi_value = 'Beginner'
+        elif 300 <= wilks_e < 400:
+            kpi_value = 'Intermediate'
+        elif 400 <= wilks_e < 500:
+            kpi_value = 'Advanced'
+        else:
+            kpi_value = 'Elite'
 
         # Format the KPI value as text
         kpi_text = f"KPI: {kpi_value}"
@@ -636,6 +662,7 @@ def update_kpi_text(n_clicks):
         updated_style = {'visibility': 'hidden'}
 
     return kpi_text, updated_style
+
 
 ''' User Stats Tab '''
 @app.callback(

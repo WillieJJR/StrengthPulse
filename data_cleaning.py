@@ -179,6 +179,19 @@ def calculate_wilks(gender: str, bodyweight: float, total: float) -> float:
 
     return wilks_coefficient * total
 
+def classify_wilks(wilks):
+    if wilks is not None and not pd.isna(wilks):
+        if wilks < 300:
+            return 'Beginner'
+        elif 300 <= wilks < 400:
+            return 'Intermediate'
+        elif 400 <= wilks < 500:
+            return 'Advanced'
+        else:
+            return 'Elite'
+    else:
+        return None
+
 
 '''Scratch Pad'''
 # database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'

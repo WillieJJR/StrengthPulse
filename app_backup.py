@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import dash
 from dash import dcc
 from dash import html
@@ -7,10 +8,11 @@ import plotly.graph_objects as go
 import plotly.express as px
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
+import plotly.figure_factory as ff
 from datetime import datetime
 from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
-from data_cleaning import clean_same_names, calculate_wilks, wilks
+from data_cleaning import clean_same_names, calculate_wilks, classify_wilks
 from postgres_ingestion import PowerliftingDataHandler
 
 
@@ -295,7 +297,7 @@ def render_comp_data():
                 dbc.Container([
                     html.Label('Please select a State..'),
                     dcc.Dropdown(
-                        id='federation-state-t2',
+                        id='user-state-t2',
                         options=[{'label': state, 'value': state} for state in
                                  sorted(filter(None, df['MeetState'].unique())) if
                                  state is not None],
@@ -366,15 +368,17 @@ def render_comp_data():
             # Column for the plot
             dbc.Col([
                 # Add your plot component here
-                dcc.Graph(
-                    id='your-plot-id',
-                    # Add plot properties and data here
-                ),
-            ], width=10, style={'height': '100vh', 'display': 'none'}),  # Set the width to 8 (2/3 of the screen)
+                html.Div([
+                    dcc.Graph(
+                        id='distribution-plot-t2',
+                        # Add plot properties and data here
+                    style={'height': '80vh'}),
+                ], id='distribution-plot-container-t2', style={'height': '100%', 'display': 'none'})
+            ], width=10,  style={'height': '100vh'}),  # Set the width to 8 (2/3 of the screen)
         ]),
 
         # Blank container for additional content (to be filled with KPI later)
-        dbc.Container(id='additional-content-container', className='p-3'),
+        #dbc.Container(id='additional-content-container', className='p-3'),
     ], style={'height': '100vh'})
 
 def render_user_stats():
@@ -631,25 +635,19 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
 @app.callback(
     [Output('kpi-text', 'children'),
      Output('kpi-box', 'style')],
-    [Input('calculate-button', 'n_clicks'),
-     Input('sex-filter-t2', 'value'),
-     Input('total-filter', 'value'),
-     Input('bodyweight-filter-t2', 'value')]
+    [Input('calculate-button', 'n_clicks')],
+    [State('sex-filter-t2', 'value'),
+     State('total-filter', 'value'),
+     State('bodyweight-filter-t2', 'value')]
 )
 def update_kpi_text(n_clicks, gender, total, bw):
+
     if n_clicks:
 
         wilks_e = calculate_wilks(gender=gender, total=total, bodyweight=bw)
         print(wilks_e)
 
-        if wilks_e < 300:
-            kpi_value = 'Beginner'
-        elif 300 <= wilks_e < 400:
-            kpi_value = 'Intermediate'
-        elif 400 <= wilks_e < 500:
-            kpi_value = 'Advanced'
-        else:
-            kpi_value = 'Elite'
+        kpi_value = classify_wilks(wilks_e)
 
         # Format the KPI value as text
         kpi_text = f"KPI: {kpi_value}"
@@ -662,6 +660,65 @@ def update_kpi_text(n_clicks, gender, total, bw):
         updated_style = {'visibility': 'hidden'}
 
     return kpi_text, updated_style
+
+
+@app.callback(
+    [Output('distribution-plot-t2', 'figure'),
+    Output('distribution-plot-container-t2', 'style')],
+    [Input('calculate-button', 'n_clicks'),
+     Input('federation-filter-t2', 'value'),
+     Input('user-state-t2', 'value')],
+    [State('sex-filter-t2', 'value'),
+     State('total-filter', 'value'),
+     State('bodyweight-filter-t2', 'value')]
+)
+def create_wilks_distribution(n_clicks, federation, location, gender, total, bw):
+
+    if n_clicks:
+
+        wilks_df = df[(df['Federation'].isin(federation)) & (df['MeetState'].isin(location))]
+        print(len(wilks_df))
+        wilks_df = wilks_df.dropna(subset=['Wilks']).replace('', np.nan).dropna(subset=['Wilks'])
+        print(len(wilks_df))
+
+        if not wilks_df.empty:
+            # Create the Wilks distribution plot with KDE
+            fig = ff.create_distplot([wilks_df['Wilks']], group_labels=['Wilks Score'], colors=['white'],
+                                     show_hist=True, bin_size=0)
+
+            # Add static bars for specific Wilks values
+            strength_levels = {100: 'Beginner', 300: 'Intermediate', 400: 'Advanced', 500: 'Elite'}
+            colors = {'Beginner': '#FCD5D1', 'Intermediate': '#FB9D98', 'Advanced': '#F76D66', 'Elite': '#F43939'}
+
+            for value, level in strength_levels.items():
+                fig.add_vline(x=value, line=dict(color=colors[level], width=2),
+                              annotation_text=f'Strength Level: {level}', annotation_position="top",
+                              annotation_font=dict(color=colors[level]))
+
+
+            # Customize the layout
+            fig.update_layout(
+                title='Wilks Distribution',
+                xaxis_title='Wilks Score',
+                yaxis_title='Density',
+                showlegend=True,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=False),
+                yaxis=dict(showgrid=False),
+                font=dict(color='white'),  # Set font color to white
+            )
+
+            updated_style = {'visibility': 'visible', 'height': '100%'}
+        else:
+            # No data to display, hide the plot
+            fig = go.Figure()
+            updated_style = {'visibility': 'hidden'}
+
+        return fig, updated_style
+    else:
+        updated_style = {'visibility': 'hidden'}
+        return go.Figure(), updated_style
 
 
 ''' User Stats Tab '''

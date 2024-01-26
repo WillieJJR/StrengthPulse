@@ -247,8 +247,7 @@ def render_comp_data():
                     html.Label('Please select a Gender..'),
                     dcc.RadioItems(
                         id='sex-filter-t2',
-                        options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
-                                 {'label': 'Mx', 'value': 'Mx'}],
+                        options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'}],
                         labelStyle={'display': 'block'},
                         style={'background-color': 'transparent', 'margin-bottom': '20px'}
                     ),

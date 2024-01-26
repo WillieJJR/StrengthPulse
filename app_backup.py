@@ -118,6 +118,7 @@ user_data = {}
 user_data_perc = {}
 estimated_comp_class = {}
 lifter_count = []
+user_total_dist = []
 
 def render_landing_page():
     return html.Div([
@@ -376,6 +377,7 @@ def render_comp_data():
                 ], id='distribution-plot-container-t2', style={'height': '100%', 'display': 'none'})
             ], width=10,  style={'height': '100vh'}),  # Set the width to 8 (2/3 of the screen)
         ]),
+        dcc.Store(id='kpi-store', storage_type='memory', data={'kpi_text': ''})
 
         # Blank container for additional content (to be filled with KPI later)
         #dbc.Container(id='additional-content-container', className='p-3'),
@@ -645,12 +647,18 @@ def update_kpi_text(n_clicks, gender, total, bw):
     if n_clicks:
 
         wilks_e = calculate_wilks(gender=gender, total=total, bodyweight=bw)
-        print(wilks_e)
+        #print(wilks_e)
 
         kpi_value = classify_wilks(wilks_e)
 
         # Format the KPI value as text
         kpi_text = f"KPI: {kpi_value}"
+
+        if len(user_total_dist) > 0:
+            user_total_dist.clear()
+            user_total_dist.append(wilks_e)
+        else:
+            user_total_dist.append(wilks_e)
 
         # Make the box visible
         updated_style = {'visibility': 'visible'}
@@ -664,11 +672,11 @@ def update_kpi_text(n_clicks, gender, total, bw):
 
 @app.callback(
     [Output('distribution-plot-t2', 'figure'),
-    Output('distribution-plot-container-t2', 'style')],
-    [Input('calculate-button', 'n_clicks'),
-     Input('federation-filter-t2', 'value'),
-     Input('user-state-t2', 'value')],
-    [State('sex-filter-t2', 'value'),
+     Output('distribution-plot-container-t2', 'style')],
+    [Input('calculate-button', 'n_clicks')],
+     [State('federation-filter-t2', 'value'),
+     State('user-state-t2', 'value'),
+     State('sex-filter-t2', 'value'),
      State('total-filter', 'value'),
      State('bodyweight-filter-t2', 'value')]
 )
@@ -682,6 +690,8 @@ def create_wilks_distribution(n_clicks, federation, location, gender, total, bw)
         print(len(wilks_df))
 
         if not wilks_df.empty:
+            kpi_val = round(user_total_dist[0],2)
+
             # Create the Wilks distribution plot with KDE
             fig = ff.create_distplot([wilks_df['Wilks']], group_labels=['Wilks Score'], colors=['white'],
                                      show_hist=True, bin_size=0)
@@ -695,6 +705,9 @@ def create_wilks_distribution(n_clicks, federation, location, gender, total, bw)
                               annotation_text=f'Strength Level: {level}', annotation_position="top",
                               annotation_font=dict(color=colors[level]))
 
+            fig.add_vline(x=kpi_val, line=dict(color='green', width=2),
+                          annotation_text=f'Your Wilks Score: {kpi_val}', annotation_position="bottom",
+                          annotation_font=dict(color='green'))
 
             # Customize the layout
             fig.update_layout(

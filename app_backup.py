@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
+import dash_daq as daq
 import plotly.figure_factory as ff
 from datetime import datetime
 from scipy.stats import percentileofscore
@@ -244,6 +245,16 @@ def render_comp_data():
             dbc.Col([
                 # Container for Gender filter
                 dbc.Container([
+                    html.Div([
+                        html.Label('Lbs:'),
+                        daq.BooleanSwitch(
+                            id='lbs-switch-t2',
+                            on=False,
+                            labelPosition="top",
+                            color='#008000'
+                        ),
+                    ], style={'display': 'flex', 'gap': '10px', 'justify-content': 'flex-start'}),
+                    html.Br(),
                     html.Label('Please select a Gender..'),
                     dcc.RadioItems(
                         id='sex-filter-t2',
@@ -252,6 +263,7 @@ def render_comp_data():
                         style={'background-color': 'transparent', 'margin-bottom': '20px'}
                     ),
                 ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
 
                 dbc.Container([
                     html.Label('Estimated total in Kg (Squat, Bench Press, and Deadlift)..'),
@@ -398,7 +410,15 @@ def render_user_stats():
             placeholder='Select Federation...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
-        html.Button('Lbs', id='lbs-button'),
+        html.Div([
+            html.Label('Lbs:'),
+            daq.BooleanSwitch(
+                id='lbs-switch-t3',
+                on=False,
+                labelPosition="top",
+                color='#008000'
+            ),
+        ], style={'display': 'flex', 'gap': '10px', 'justify-content': 'flex-start'}),
         dcc.RadioItems(
             id='sex-filter',
             options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
@@ -636,17 +656,21 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
 @app.callback(
     [Output('kpi-text', 'children'),
      Output('kpi-box', 'style')],
-    [Input('calculate-button', 'n_clicks')],
+    [Input('calculate-button', 'n_clicks'),
+     Input('lbs-switch-t2', 'on')],
     [State('sex-filter-t2', 'value'),
      State('total-filter', 'value'),
      State('bodyweight-filter-t2', 'value')]
 )
-def update_kpi_text(n_clicks, gender, total, bw):
+def update_kpi_text(n_clicks, switch, gender, total, bw):
 
     if n_clicks:
-
-        wilks_e = calculate_wilks(gender=gender, total=total, bodyweight=bw)
-        #print(wilks_e)
+        if switch:
+            wilks_e = calculate_wilks(gender=gender, total=total, bodyweight=bw, lbs = True)
+            print('On: ', wilks_e)
+        else:
+            wilks_e = calculate_wilks(gender=gender, total=total, bodyweight=bw, lbs = False)
+            print('Off: ', wilks_e)
 
         kpi_value = classify_wilks(wilks_e)
 
@@ -721,15 +745,18 @@ def create_wilks_distribution(n_clicks, federation, location, gender, total, bw)
                 font=dict(color='white'),  # Set font color to white
             )
 
-            updated_style = {'visibility': 'visible', 'height': '100%'}
+            #updated_style = {'visibility': 'visible', 'height': '100%'}
+            updated_style = {'display': 'block', 'height': '100%'}
         else:
             # No data to display, hide the plot
             fig = go.Figure()
-            updated_style = {'visibility': 'hidden'}
+            #updated_style = {'visibility': 'hidden'}
+            updated_style = {'display': 'none'}
 
         return fig, updated_style
     else:
-        updated_style = {'visibility': 'hidden'}
+        #updated_style = {'visibility': 'hidden'}
+        updated_style = {'display': 'none'}
         return go.Figure(), updated_style
 
 
@@ -755,30 +782,30 @@ def clear_input_values(n_clicks_clear):
     # Clear the values of the input components
     return None, None, None, None, None, 0  # Set n_clicks to 0
 
-@app.callback(
-    Output('lbs-button', 'style'),
-    Input('lbs-button', 'n_clicks')
-)
-
-def update_kg_lb_button(n_clicks):
-    if n_clicks and n_clicks % 2 == 0:
-        lbs_button_style = {
-            'borderRadius': '12px',
-            'background-color': 'rgba(0, 255, 0, 0.5)',
-            'color': 'white',
-            'height': '30px',  # set the height of the buttons
-            'width': '90px',  # set the width of the buttons
-        }
-    else:
-        lbs_button_style = {
-            'borderRadius': '12px',
-            'background-color': 'rgba(211, 211, 211, 0.5)',
-            'color': 'white',
-            'height': '30px',  # set the height of the buttons
-            'width': '90px',  # set the width of the buttons
-        }
-
-    return lbs_button_style
+# @app.callback(
+#     Output('lbs-button', 'style'),
+#     Input('lbs-button', 'n_clicks')
+# )
+#
+# def update_kg_lb_button(n_clicks):
+#     if n_clicks and n_clicks % 2 == 0:
+#         lbs_button_style = {
+#             'borderRadius': '12px',
+#             'background-color': 'rgba(0, 255, 0, 0.5)',
+#             'color': 'white',
+#             'height': '30px',  # set the height of the buttons
+#             'width': '90px',  # set the width of the buttons
+#         }
+#     else:
+#         lbs_button_style = {
+#             'borderRadius': '12px',
+#             'background-color': 'rgba(211, 211, 211, 0.5)',
+#             'color': 'white',
+#             'height': '30px',  # set the height of the buttons
+#             'width': '90px',  # set the width of the buttons
+#         }
+#
+#     return lbs_button_style
 
 @app.callback(
     Output('tested-button', 'style'),
@@ -816,7 +843,7 @@ def update_tested_button(n_clicks):
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
     Input('add-data-button', 'n_clicks'),
-    Input('lbs-button', 'n_clicks'),
+    Input('lbs-switch-t3', 'on'),
     State('name-input', 'value'),
     State('age-input', 'value'),
     State('weight-input', 'value'),
@@ -824,11 +851,11 @@ def update_tested_button(n_clicks):
     State('bench-input', 'value'),
     State('deadlift-input', 'value'),
 )
-def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, name, age, weight, squat, bench, deadlift):
+def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_switch, name, age, weight, squat, bench, deadlift):
 
     if n_clicks:
         if name and age and weight and federation:
-            if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+            if lbs_switch:
                 user_data.update(
                     {'Name': name, 'Age': age, 'BodyweightKg': weight / float(2.2), 'Best3SquatKg': squat,
                      'Best3BenchKg': bench,
@@ -895,7 +922,7 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
 
             squat_perc, bench_perc, deadlift_perc = None, None, None
             if squat:
-                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                if lbs_switch:
                     df_grouped['squat'] = df_grouped['squat'].fillna(0)
                     squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'] / float(2.2))
                     squat_perc_rounded = '{:.1%}'.format(squat_perc / 100)
@@ -909,7 +936,7 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                     user_data_perc.update({'squat_perc': squat_perc_val})
 
             if bench:
-                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                if lbs_switch:
                     df_grouped['bench'] = df_grouped['bench'].fillna(0)
                     bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'] / float(2.2))
                     bench_perc_rounded = '{:.1%}'.format(bench_perc / 100)
@@ -923,7 +950,7 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                     user_data_perc.update({'bench_perc': bench_perc_val})
 
             if deadlift:
-                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                if lbs_switch:
                     df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
                     deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'] / float(2.2))
                     deadlift_perc_rounded = '{:.1%}'.format(deadlift_perc / 100)

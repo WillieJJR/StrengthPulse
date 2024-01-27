@@ -159,7 +159,11 @@ def reduce_mem_usage(df, verbose=True):
     if verbose: print('Mem. usage decreased to {:5.2f} Mb ({:.1f}% reduction)'.format(end_mem, 100 * (start_mem - end_mem) / start_mem))
     return df
 
-def calculate_wilks(gender: str, bodyweight: float, total: float) -> float:
+def calculate_wilks(gender: str, bodyweight: float, total: float, lbs: bool) -> float:
+    if lbs:
+        bodyweight = bodyweight / 2.2
+        total = total / 2.2
+
     coefficients = {
         'm': [-216.0475144, 16.2606339, -0.002388645, -0.00113732, 7.01863e-6, -1.291e-8],
         'f': [594.31747775582, -27.23842536447, 0.82112226871, -0.00930733913, 4.731582e-5, -9.054e-8]

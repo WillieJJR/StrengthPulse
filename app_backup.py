@@ -782,31 +782,6 @@ def clear_input_values(n_clicks_clear):
     # Clear the values of the input components
     return None, None, None, None, None, 0  # Set n_clicks to 0
 
-# @app.callback(
-#     Output('lbs-button', 'style'),
-#     Input('lbs-button', 'n_clicks')
-# )
-#
-# def update_kg_lb_button(n_clicks):
-#     if n_clicks and n_clicks % 2 == 0:
-#         lbs_button_style = {
-#             'borderRadius': '12px',
-#             'background-color': 'rgba(0, 255, 0, 0.5)',
-#             'color': 'white',
-#             'height': '30px',  # set the height of the buttons
-#             'width': '90px',  # set the width of the buttons
-#         }
-#     else:
-#         lbs_button_style = {
-#             'borderRadius': '12px',
-#             'background-color': 'rgba(211, 211, 211, 0.5)',
-#             'color': 'white',
-#             'height': '30px',  # set the height of the buttons
-#             'width': '90px',  # set the width of the buttons
-#         }
-#
-#     return lbs_button_style
-
 @app.callback(
     Output('tested-button', 'style'),
     Input('tested-button', 'n_clicks')

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import dash
 from dash import dcc
 from dash import html
@@ -7,10 +8,12 @@ import plotly.graph_objects as go
 import plotly.express as px
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
+import dash_daq as daq
+import plotly.figure_factory as ff
 from datetime import datetime
 from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
-from data_cleaning import clean_same_names
+from data_cleaning import clean_same_names, calculate_wilks, classify_wilks
 from postgres_ingestion import PowerliftingDataHandler
 
 
@@ -111,10 +114,12 @@ database_url = 'postgresql://williejc:VHR3Llqen4cg@ep-aged-tooth-59253681.us-eas
 postgres_instance = PowerliftingDataHandler(database_url)
 df = postgres_instance.fetch_data(table_name='powerlifting_data')
 
+user_total = {}
 user_data = {}
 user_data_perc = {}
 estimated_comp_class = {}
 lifter_count = []
+user_total_dist = []
 
 def render_landing_page():
     return html.Div([
@@ -202,92 +207,170 @@ def render_landing_page():
             style=dict(display='flex', justifyContent='center', alignItems='center')
         ),
 
-
-            # html.Br(),
-        # html.Br(),
-        # html.Br(),
-        #
-        # html.H2("Things to Note: "),
-        # html.Br(),
-        # dcc.Markdown(
-        #     """
-        # - Users can select a lifter to view a line chart displaying Squat, Bench, and Deadlift performance, with options to switch by Date, Age, or Weight.
-        #
-        # - Optimization for cost-effectiveness influences data processes, preserving RAM and Compute.
-        #
-        # - Data is filtered for USA lifters, allowing meets outside the USA. Age filtering excludes unknowns and entries under 13 years.
-        #
-        # - Null values in WeighClassKg are filtered for cleaner data representation.
-        #
-        # - Data spans from 2017 onwards, dynamically displaying the past 5 years.
-        #
-        # - The app models data independently for each competition, lacking uniquely identifying values for participants.
-        #
-        # - Solutions for deconflicting competitors are in place, with occasional discrepancies triggering notifications.
-        #
-        # - This app is still under development.
-        # """
-        # ),
-        # html.Br(),
-        #html.P("© 2024 StrengthPulse. All rights reserved.", style={'text-align': 'center', 'color': '#7f8c8d'})
+        html.P("© 2024 StrengthPulse. All rights reserved.", style={'text-align': 'center', 'color': '#7f8c8d'})
 
     ])
 def render_comp_data():
     return html.Div([
-        html.H3(f'Most recent competition data as of {data_retriever.retrieve_last_updated_date()} '),
-        html.P('This tab provides exploration of the most up-to-date Powerlifting data available from openpowerlifting.org',
-               style={'color': text_color}),
-        dcc.Markdown('**Data needs to be filtered:** Filter the data by selecting filter criteria below.'),
-        dcc.Dropdown(
-            id='federation-dropdown-filter',
-            options=[{'label': federation, 'value': federation} for federation in sorted(df['Federation'].unique())],
-            multi=True,
-            placeholder='Select Federation...',
-            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        ),
-        # The gender selection row
-        html.Div([
-            html.P('Please select a Gender: '),
-            dcc.RadioItems(
-                id='sex-filter',
-                options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
-                         {'label': 'Mx', 'value': 'Mx'}],
-                labelStyle={'display': 'inline', 'margin-right': '10px'},
-                style={'background-color': 'transparent', 'margin-bottom': '10px', 'margin-left': '10px'}
-            ),
-        ], style={'display': 'flex', 'flex-direction': 'row'}),
-        dcc.Dropdown(
-            id='weightclass-filter',
-            #options=[{'label': weightClass, 'value': weightClass} for weightClass in sorted(df['WeightClassKg'].unique())],
-            multi=True,
-            placeholder='Select weight class (Kg)...',
-            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        ),
-        dcc.Dropdown(
-            id='ageclass-filter',
-            #options=[{'label': ageClass, 'value': ageClass} for ageClass in sorted(df['AgeClass'].unique()) if
-            #         ageClass is not None],
-            multi=True,
-            placeholder='Select age class...',
-            style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
-        ),
-        #html.Button('Load Data', id='load-data-button'),
-        dbc.Button(
-            children=[
-                html.I(className='fa-solid fa-database',
-                       style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8', marginRight='5px')),
-                html.Div('Load Data', style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
-                                                marginTop='-8px'))
-            ],
-            id='load-data-button',
-            n_clicks=0,
-            size='md',
-            style=dict(fontSize='1.7vh', backgroundColor='rgba(0, 0, 0, 0)', textAlign='center', height='32px',
-                       marginTop='-5px', border='none')
-        ),
-        #'''Implement UI for a kg vs lb button here'''
-        dcc.Loading(id="loading", type="default", children=[html.Div(id='data-table-container')]),
-    ])
+        html.H3('Wilks Score Comparison', style={'color': text_color}),
+        html.P(
+            'This tab allows users to calculate their Wilks score, providing a standardized measure of strength that accounts for differences in body weight and gender.',
+            style={'color': text_color}),
+        html.Br(),
+        # Row for filter components and plot
+        dbc.Row([
+            # Column for filter components
+            dbc.Col([
+                # Container for Gender filter
+                dbc.Container([
+                    html.Div([
+                        html.Label('Lbs:'),
+                        daq.BooleanSwitch(
+                            id='lbs-switch-t2',
+                            on=False,
+                            labelPosition="top",
+                            color='#008000'
+                        ),
+                    ], style={'display': 'flex', 'gap': '10px', 'justify-content': 'flex-start'}),
+                    html.Br(),
+                    html.Label('Please select a Gender..'),
+                    dcc.RadioItems(
+                        id='sex-filter-t2',
+                        options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'}],
+                        labelStyle={'display': 'block'},
+                        style={'background-color': 'transparent', 'margin-bottom': '20px'}
+                    ),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+
+                dbc.Container([
+                    html.Label('Estimated total in Kg (Squat, Bench Press, and Deadlift)..'),
+                    html.Div([
+                        dcc.Input(
+                            id='total-filter',
+                            type='number',
+                            value=500,
+                            placeholder='Total (Kg)',
+                            style={'width': '100%', 'display': 'inline-block', 'margin-right': '5%'}
+                        ),
+                    ]),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                dbc.Container([
+                    html.Label('Estimated Bodyweight in Kg..'),
+                    html.Div([
+                        dcc.Input(
+                            id='bodyweight-filter-t2',
+                            type='number',
+                            placeholder='Bodyweight (Kg)',
+                            style={'width': '100%', 'display': 'inline-block', 'margin-right': '5%'}
+                        ),
+                    ]),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                # Container for Federation filter
+                dbc.Container([
+                    html.Label('Please select a Federation..'),
+                    dcc.Dropdown(
+                        id='federation-filter-t2',
+                        options=[{'label': Federation, 'value': Federation} for Federation in
+                                 sorted(df['Federation'].unique()) if
+                                 Federation is not None],
+                        multi=True,
+                        placeholder='Select Federation...',
+                        style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px',
+                               'background-color': 'transparent',
+                               'color': 'black'}
+                    ),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                dbc.Container([
+                    html.Label('Please select a State..'),
+                    dcc.Dropdown(
+                        id='user-state-t2',
+                        options=[{'label': state, 'value': state} for state in
+                                 sorted(filter(None, df['MeetState'].unique())) if
+                                 state is not None],
+                        multi=True,
+                        placeholder='Select State...',
+                        style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px',
+                               'background-color': 'transparent',
+                               'color': 'black'}
+                    ),
+                ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
+
+                html.Div(
+                    dbc.Button(
+                        children=[
+                            html.Div('Calculate',
+                                     style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='bottom',
+                                                marginTop='-8px', fontSize='2.5vh')),
+                            html.I(className='fa-solid fa-square-poll-vertical',
+                                   style=dict(display='inline-block', verticalAlign='center', lineHeight='0.8',
+                                              marginRight='5px', fontSize='2.5vh')),
+                        ],
+                        id='calculate-button',
+                        n_clicks=0,
+                        size='md',
+                        style=dict(
+                            fontSize='1.7vh',
+                            backgroundColor='rgba(0, 0, 0, 0)',
+                            textAlign='center',
+                            height='32px',
+                            border='none'
+                        )
+                    ),
+                    style=dict(display='flex', justifyContent='flex-start', alignItems='center')
+                ),
+
+                html.Br(),
+                html.Br(),
+
+                dbc.Container([
+                    html.Label('Your Estimated Strength Level is..'),
+                    html.Div(
+                        id='kpi-box',
+                        children=[
+                            html.Div(
+                                id='kpi-text',
+                                children="",
+                                style={
+                                    'background-color': 'white',
+                                    'border-radius': '10px',
+                                    'padding': '20px',
+                                    'text-align': 'center',
+                                    'box-shadow': '0 0 10px rgba(0, 0, 0, 0.1)',
+                                    'font-size': '18px',
+                                    'font-weight': 'bold',
+                                    'color': 'black',
+                                    'margin-top': '10px'
+                                    #'visibility': 'hidden',  # Initial visibility set to hidden
+                                }
+                            ),
+                        ],
+                        style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}  # Optional: Add margin for better spacing
+                    ),
+                ])
+
+                # Container for Total range filter
+            ], width=2, style={'height': '100vh'}),  # Set the width to 4 (1/3 of the screen)
+
+            # Column for the plot
+            dbc.Col([
+                # Add your plot component here
+                html.Div([
+                    dcc.Graph(
+                        id='distribution-plot-t2',
+                        # Add plot properties and data here
+                    style={'height': '80vh'}),
+                ], id='distribution-plot-container-t2', style={'height': '100%', 'display': 'none'})
+            ], width=10,  style={'height': '100vh'}),  # Set the width to 8 (2/3 of the screen)
+        ]),
+        dcc.Store(id='kpi-store', storage_type='memory', data={'kpi_text': ''})
+
+        # Blank container for additional content (to be filled with KPI later)
+        #dbc.Container(id='additional-content-container', className='p-3'),
+    ], style={'height': '100vh'})
 
 def render_user_stats():
     return html.Div([
@@ -305,7 +388,15 @@ def render_user_stats():
             placeholder='Select Federation...',
             style={'width': '49%', 'margin': '0 10px 10px 0', 'background-color': 'transparent', 'color': 'black'}
         ),
-        html.Button('Lbs', id='lbs-button'),
+        html.Div([
+            html.Label('Lbs:'),
+            daq.BooleanSwitch(
+                id='lbs-switch-t3',
+                on=False,
+                labelPosition="top",
+                color='#008000'
+            ),
+        ], style={'display': 'flex', 'gap': '10px', 'justify-content': 'flex-start'}),
         dcc.RadioItems(
             id='sex-filter',
             options=[{'label': 'Male', 'value': 'M'}, {'label': 'Female', 'value': 'F'},
@@ -540,6 +631,113 @@ def load_and_filter_data(n_clicks, selected_weightclasses, selected_ageclasses, 
     return html.Div()
 
 
+@app.callback(
+    [Output('kpi-text', 'children'),
+     Output('kpi-box', 'style')],
+    [Input('calculate-button', 'n_clicks'),
+     Input('lbs-switch-t2', 'on')],
+    [State('sex-filter-t2', 'value'),
+     State('total-filter', 'value'),
+     State('bodyweight-filter-t2', 'value')]
+)
+def update_kpi_text(n_clicks, switch, gender, total, bw):
+
+    if n_clicks:
+        if switch:
+            wilks_e = calculate_wilks(gender=gender, total=total, bodyweight=bw, lbs = True)
+            print('On: ', wilks_e)
+        else:
+            wilks_e = calculate_wilks(gender=gender, total=total, bodyweight=bw, lbs = False)
+            print('Off: ', wilks_e)
+
+        kpi_value = classify_wilks(wilks_e)
+
+        # Format the KPI value as text
+        kpi_text = f"KPI: {kpi_value}"
+
+        if len(user_total_dist) > 0:
+            user_total_dist.clear()
+            user_total_dist.append(wilks_e)
+        else:
+            user_total_dist.append(wilks_e)
+
+        # Make the box visible
+        updated_style = {'visibility': 'visible'}
+    else:
+        # If button is not clicked, keep the box hidden
+        kpi_text = ""
+        updated_style = {'visibility': 'hidden'}
+
+    return kpi_text, updated_style
+
+
+@app.callback(
+    [Output('distribution-plot-t2', 'figure'),
+     Output('distribution-plot-container-t2', 'style')],
+    [Input('calculate-button', 'n_clicks')],
+     [State('federation-filter-t2', 'value'),
+     State('user-state-t2', 'value'),
+     State('sex-filter-t2', 'value'),
+     State('total-filter', 'value'),
+     State('bodyweight-filter-t2', 'value')]
+)
+def create_wilks_distribution(n_clicks, federation, location, gender, total, bw):
+
+    if n_clicks:
+
+        wilks_df = df[(df['Federation'].isin(federation)) & (df['MeetState'].isin(location))]
+        print(len(wilks_df))
+        wilks_df = wilks_df.dropna(subset=['Wilks']).replace('', np.nan).dropna(subset=['Wilks'])
+        print(len(wilks_df))
+
+        if not wilks_df.empty:
+            kpi_val = round(user_total_dist[0],2)
+
+            # Create the Wilks distribution plot with KDE
+            fig = ff.create_distplot([wilks_df['Wilks']], group_labels=['Wilks Score'], colors=['white'],
+                                     show_hist=True, bin_size=0)
+
+            # Add static bars for specific Wilks values
+            strength_levels = {100: 'Beginner', 300: 'Intermediate', 400: 'Advanced', 500: 'Elite'}
+            colors = {'Beginner': '#FCD5D1', 'Intermediate': '#FB9D98', 'Advanced': '#F76D66', 'Elite': '#F43939'}
+
+            for value, level in strength_levels.items():
+                fig.add_vline(x=value, line=dict(color=colors[level], width=2),
+                              annotation_text=f'Strength Level: {level}', annotation_position="top",
+                              annotation_font=dict(color=colors[level]))
+
+            fig.add_vline(x=kpi_val, line=dict(color='green', width=2),
+                          annotation_text=f'Your Wilks Score: {kpi_val}', annotation_position="bottom",
+                          annotation_font=dict(color='green'))
+
+            # Customize the layout
+            fig.update_layout(
+                title='Wilks Distribution',
+                xaxis_title='Wilks Score',
+                yaxis_title='Density',
+                showlegend=True,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=False),
+                yaxis=dict(showgrid=False),
+                font=dict(color='white'),  # Set font color to white
+            )
+
+            #updated_style = {'visibility': 'visible', 'height': '100%'}
+            updated_style = {'display': 'block', 'height': '100%'}
+        else:
+            # No data to display, hide the plot
+            fig = go.Figure()
+            #updated_style = {'visibility': 'hidden'}
+            updated_style = {'display': 'none'}
+
+        return fig, updated_style
+    else:
+        #updated_style = {'visibility': 'hidden'}
+        updated_style = {'display': 'none'}
+        return go.Figure(), updated_style
+
+
 ''' User Stats Tab '''
 @app.callback(
     [Output('squat-input', 'value'),
@@ -561,31 +759,6 @@ def clear_input_values(n_clicks_clear):
 
     # Clear the values of the input components
     return None, None, None, None, None, 0  # Set n_clicks to 0
-
-@app.callback(
-    Output('lbs-button', 'style'),
-    Input('lbs-button', 'n_clicks')
-)
-
-def update_kg_lb_button(n_clicks):
-    if n_clicks and n_clicks % 2 == 0:
-        lbs_button_style = {
-            'borderRadius': '12px',
-            'background-color': 'rgba(0, 255, 0, 0.5)',
-            'color': 'white',
-            'height': '30px',  # set the height of the buttons
-            'width': '90px',  # set the width of the buttons
-        }
-    else:
-        lbs_button_style = {
-            'borderRadius': '12px',
-            'background-color': 'rgba(211, 211, 211, 0.5)',
-            'color': 'white',
-            'height': '30px',  # set the height of the buttons
-            'width': '90px',  # set the width of the buttons
-        }
-
-    return lbs_button_style
 
 @app.callback(
     Output('tested-button', 'style'),
@@ -623,7 +796,7 @@ def update_tested_button(n_clicks):
     Input('federation-filter', 'value'),
     Input('sex-filter', 'value'),
     Input('add-data-button', 'n_clicks'),
-    Input('lbs-button', 'n_clicks'),
+    Input('lbs-switch-t3', 'on'),
     State('name-input', 'value'),
     State('age-input', 'value'),
     State('weight-input', 'value'),
@@ -631,11 +804,11 @@ def update_tested_button(n_clicks):
     State('bench-input', 'value'),
     State('deadlift-input', 'value'),
 )
-def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, name, age, weight, squat, bench, deadlift):
+def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_switch, name, age, weight, squat, bench, deadlift):
 
     if n_clicks:
         if name and age and weight and federation:
-            if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+            if lbs_switch:
                 user_data.update(
                     {'Name': name, 'Age': age, 'BodyweightKg': weight / float(2.2), 'Best3SquatKg': squat,
                      'Best3BenchKg': bench,
@@ -702,7 +875,7 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
 
             squat_perc, bench_perc, deadlift_perc = None, None, None
             if squat:
-                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                if lbs_switch:
                     df_grouped['squat'] = df_grouped['squat'].fillna(0)
                     squat_perc = percentileofscore(df_grouped['squat'], user_data['Best3SquatKg'] / float(2.2))
                     squat_perc_rounded = '{:.1%}'.format(squat_perc / 100)
@@ -716,7 +889,7 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                     user_data_perc.update({'squat_perc': squat_perc_val})
 
             if bench:
-                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                if lbs_switch:
                     df_grouped['bench'] = df_grouped['bench'].fillna(0)
                     bench_perc = percentileofscore(df_grouped['bench'], user_data['Best3BenchKg'] / float(2.2))
                     bench_perc_rounded = '{:.1%}'.format(bench_perc / 100)
@@ -730,7 +903,7 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_n_clicks, n
                     user_data_perc.update({'bench_perc': bench_perc_val})
 
             if deadlift:
-                if lbs_n_clicks and lbs_n_clicks % 2 == 0:
+                if lbs_switch:
                     df_grouped['deadlift'] = df_grouped['deadlift'].fillna(0)
                     deadlift_perc = percentileofscore(df_grouped['deadlift'], user_data['Best3DeadliftKg'] / float(2.2))
                     deadlift_perc_rounded = '{:.1%}'.format(deadlift_perc / 100)

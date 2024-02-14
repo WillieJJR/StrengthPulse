@@ -180,32 +180,29 @@ def render_landing_page():
             html.Img(src='/assets/hiclipart.com (4).png', style={'width': '18%', 'margin': 'auto', 'display': 'block'}),
         ], style={'text-align': 'center', 'margin': '20px'}),
 
-        # html.Div([
-        #     html.A(html.Button("Get Started", className="button-primary"), href="/features"),
-        # ], style={'text-align': 'center', 'margin': '20px'}),
-        html.Div(
-            dbc.Button(
-                children=[
-                    html.Div('Get Started',
-                             style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
-                                        marginTop='-8px')),
-                    html.I(className='fa-solid fa-circle-right',
-                           style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8',
-                                      marginRight='5px')),
-                ],
-                id='get-started',
-                n_clicks=0,
-                size='md',
-                style=dict(
-                    fontSize='1.7vh',
-                    backgroundColor='rgba(0, 0, 0, 0)',
-                    textAlign='center',
-                    height='32px',
-                    border='none'
-                )
-            ),
-            style=dict(display='flex', justifyContent='center', alignItems='center')
-        ),
+        # html.Div(
+        #     dbc.Button(
+        #         children=[
+        #             html.Div('Get Started',
+        #                      style=dict(paddingRight='0.3vw', display='inline-block', verticalAlign='top',
+        #                                 marginTop='-8px')),
+        #             html.I(className='fa-solid fa-circle-right',
+        #                    style=dict(display='inline-block', verticalAlign='top', lineHeight='0.8',
+        #                               marginRight='5px')),
+        #         ],
+        #         id='get-started',
+        #         n_clicks=0,
+        #         size='md',
+        #         style=dict(
+        #             fontSize='1.7vh',
+        #             backgroundColor='rgba(0, 0, 0, 0)',
+        #             textAlign='center',
+        #             height='32px',
+        #             border='none'
+        #         )
+        #     ),
+        #     style=dict(display='flex', justifyContent='center', alignItems='center')
+        # ),
 
         html.P("© 2024 StrengthPulse. All rights reserved.", style={'text-align': 'center', 'color': '#7f8c8d'})
 

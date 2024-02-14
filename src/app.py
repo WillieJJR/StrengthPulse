@@ -16,8 +16,7 @@ from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import clean_same_names, calculate_wilks, classify_wilks
 from postgres_ingestion import PowerliftingDataHandler
-# from config import DATABASE_URL
-# from config_public import
+
 
 
 
@@ -123,8 +122,6 @@ except ImportError:
 
 
 
-# os.environ['DATABASE_URL'] = DATABASE_URL  #this value is stored in the config.py file and in the app environment vars - uncomment to use locally
-# database_url = os.environ.get('DATABASE_URL') #this value is stored in the config.py file and in the app environment vars
 postgres_instance = PowerliftingDataHandler(database_url)
 df = postgres_instance.fetch_data(table_name='powerlifting_data')
 

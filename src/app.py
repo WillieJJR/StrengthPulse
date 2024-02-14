@@ -16,6 +16,7 @@ from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import clean_same_names, calculate_wilks, classify_wilks
 from postgres_ingestion import PowerliftingDataHandler
+from config import DATABASE_URL
 
 
 
@@ -110,10 +111,17 @@ app.layout = html.Div(children=[
     html.Div(id='tab-content', style={'margin-top': '20px'}),
 ])
 
-#os.environ['DATABASE_URL'] = 'Insert the url here'
-database_url = os.environ.get('DATABASE_URL') #this value is stored in the config.py file and in the app environment vars
-#database_url = 'postgresql://williejc:VHR3Llqen4cg@ep-aged-tooth-59253681.us-east-2.aws.neon.tech/powerlifting_db?sslmode=require'
-#postgres_instance = PowerliftingDataHandler(database_url)
+#handle local deployment vs server deployment
+try:
+    from config import DATABASE_URL
+    os.environ['DATABASE_URL'] = DATABASE_URL
+    database_url = os.environ.get('DATABASE_URL')
+except ImportError:
+    print('Package is not available in Deployment environment. Setting Environment Variable')
+    database_url = os.environ.get('DATABASE_URL')
+
+#os.environ['DATABASE_URL'] = DATABASE_URL  #this value is stored in the config.py file and in the app environment vars - uncomment to use locally
+#database_url = os.environ.get('DATABASE_URL') #this value is stored in the config.py file and in the app environment vars
 postgres_instance = PowerliftingDataHandler(database_url)
 df = postgres_instance.fetch_data(table_name='powerlifting_data')
 

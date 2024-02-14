@@ -1,13 +1,16 @@
+import os
 from postgres_ingestion import PowerliftingDataHandler, PowerliftingDataRetriever
 from datetime import datetime
 import time
+from config import DATABASE_URL
 
-#database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
-database_url = 'postgresql://williejc:VHR3Llqen4cg@ep-aged-tooth-59253681.us-east-2.aws.neon.tech/powerlifting_db?sslmode=require'
+
+os.environ['DATABASE_URL'] = DATABASE_URL  #this value is stored in the config.py file and in the app environment vars - uncomment to use locally
+database_url = os.environ.get('DATABASE_URL') #this value is stored in the config.py file and in the app environment vars
 
 def etl_openpl_postgres(database_url: str) -> None:
 
-    """
+    """D
     Perform ETL (Extract, Transform, Load) process from OpenPowerlifting to a PostgreSQL Database.
 
     Parameters:

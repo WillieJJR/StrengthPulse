@@ -195,36 +195,3 @@ def classify_wilks(wilks):
             return 'Elite'
     else:
         return None
-
-
-'''Scratch Pad'''
-# database_url = 'postgres://powerlifting_comp_user:Ow7MdhrLkOjBG7qbBvZJzNx7o6RSJOSQ@dpg-cm7otoi1hbls73au7d00-a.oregon-postgres.render.com/powerlifting_comp'
-# handler = PowerliftingDataHandler(database_url)
-# df = handler.fetch_data(table_name='powerlifting_data', database_url=database_url)
-# memory_usage = df.memory_usage(deep=True)
-# total_memory_usage = memory_usage.sum() / (1024**2)  # Convert bytes to megabytes
-# print(f'Total memory usage: {total_memory_usage:.2f} MB')
-# data_retriever = PowerliftingDataRetriever()
-# df = data_retriever.retrieve_and_process_csv()
-# datatype_column1 = df['Date'].dtype
-# df['Date'] = pd.to_datetime(df['Date'])
-# #
-# #
-# #
-# df = df[df['Date'].dt.year >= 2013]
-# user_profile = df[(df['Name'] == 'Michael Peterson') & (df['Event'] == 'SBD')]
-# cols = ['BodyweightKg', 'MeetName', 'Date']
-# df_user_profile = user_profile.drop_duplicates(subset=cols)
-#
-# unique_lifter_validation = clean_same_names(df_user_profile, 1)
-# if unique_lifter_validation['persona'].nunique() > 1:
-#     cols.append('persona')
-#     df_user_profile = clean_same_names(df_user_profile, 1)
-#
-#
-# lifter_stats_df_agg = df_user_profile.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
-#
-# unique_lifter_validation = clean_same_names(df_user_profile_2, 1)
-# if unique_lifter_validation['persona'].nunique() > 1:
-#     cols.append('persona')
-#     lifter_stats_df = clean_same_names(df_user_profile_2, 1)

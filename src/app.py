@@ -16,7 +16,8 @@ from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import clean_same_names, calculate_wilks, classify_wilks
 from postgres_ingestion import PowerliftingDataHandler
-from config import DATABASE_URL
+# from config import DATABASE_URL
+# from config_public import
 
 
 
@@ -118,10 +119,12 @@ try:
     database_url = os.environ.get('DATABASE_URL')
 except ImportError:
     print('Package is not available in Deployment environment. Setting Environment Variable')
-    database_url = os.environ.get('DATABASE_URL')
+    database_url = os.environ.get('DATABASE_URL') #the environment variable is pre-set in deployment environment
 
-#os.environ['DATABASE_URL'] = DATABASE_URL  #this value is stored in the config.py file and in the app environment vars - uncomment to use locally
-#database_url = os.environ.get('DATABASE_URL') #this value is stored in the config.py file and in the app environment vars
+
+
+# os.environ['DATABASE_URL'] = DATABASE_URL  #this value is stored in the config.py file and in the app environment vars - uncomment to use locally
+# database_url = os.environ.get('DATABASE_URL') #this value is stored in the config.py file and in the app environment vars
 postgres_instance = PowerliftingDataHandler(database_url)
 df = postgres_instance.fetch_data(table_name='powerlifting_data')
 

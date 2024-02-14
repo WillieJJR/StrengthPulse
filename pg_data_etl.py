@@ -10,7 +10,7 @@ database_url = os.environ.get('DATABASE_URL') #this value is stored in the confi
 
 def etl_openpl_postgres(database_url: str) -> None:
 
-    """D
+    """
     Perform ETL (Extract, Transform, Load) process from OpenPowerlifting to a PostgreSQL Database.
 
     Parameters:

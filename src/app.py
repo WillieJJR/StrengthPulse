@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import dash
@@ -109,8 +110,10 @@ app.layout = html.Div(children=[
     html.Div(id='tab-content', style={'margin-top': '20px'}),
 ])
 
-
-database_url = 'postgresql://williejc:VHR3Llqen4cg@ep-aged-tooth-59253681.us-east-2.aws.neon.tech/powerlifting_db?sslmode=require'
+#os.environ['DATABASE_URL'] = 'Insert the url here'
+database_url = os.environ.get('DATABASE_URL') #this value is stored in the config.py file and in the app environment vars
+#database_url = 'postgresql://williejc:VHR3Llqen4cg@ep-aged-tooth-59253681.us-east-2.aws.neon.tech/powerlifting_db?sslmode=require'
+#postgres_instance = PowerliftingDataHandler(database_url)
 postgres_instance = PowerliftingDataHandler(database_url)
 df = postgres_instance.fetch_data(table_name='powerlifting_data')
 

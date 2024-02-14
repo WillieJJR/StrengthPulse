@@ -8,3 +8,4 @@
 # Ignore compiled Python files
 *.pyc
 __pycache__/
+config.py

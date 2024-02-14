@@ -693,11 +693,9 @@ def create_wilks_distribution(n_clicks, federation, location, gender, total, bw)
         if not wilks_df.empty:
             kpi_val = round(user_total_dist[0],2)
 
-            # Create the Wilks distribution plot with KDE
             fig = ff.create_distplot([wilks_df['Wilks']], group_labels=['Wilks Score'], colors=['white'],
                                      show_hist=True, bin_size=0)
 
-            # Add static bars for specific Wilks values
             strength_levels = {100: 'Beginner', 300: 'Intermediate', 400: 'Advanced', 500: 'Elite'}
             colors = {'Beginner': '#FCD5D1', 'Intermediate': '#FB9D98', 'Advanced': '#F76D66', 'Elite': '#F43939'}
 
@@ -723,12 +721,9 @@ def create_wilks_distribution(n_clicks, federation, location, gender, total, bw)
                 font=dict(color='white'),  # Set font color to white
             )
 
-            #updated_style = {'visibility': 'visible', 'height': '100%'}
             updated_style = {'display': 'block', 'height': '100%'}
         else:
-            # No data to display, hide the plot
             fig = go.Figure()
-            #updated_style = {'visibility': 'hidden'}
             updated_style = {'display': 'none'}
 
         return fig, updated_style
@@ -921,7 +916,6 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_switch, nam
             else:
                 federation = ', '.join(str(x) for x in federation)
 
-            # Logic for updating 'output-container' and 'output-container-2'
             output1 = [
                 html.Div([
                     html.H5(f'Current Weight Class in {federation}: {estimated_comp_class.get("weightclass", 0)} Kg',
@@ -948,48 +942,48 @@ def add_user_data_calculation(tested, federation, sex, n_clicks, lbs_switch, nam
             return "Please enter both name and age", name, age, '', '', ''
     return '', '', '', '', '', ''
 
-# Callback to update the gauge chart
+
 @app.callback(
     [Output('squat_indicator_chart', 'figure'),
      Output('squat_indicator_chart', 'style')],
     [Input('add-data-button', 'n_clicks')],
-    [Input('squat_vals', 'children')]  # Assuming 'squat-input' is the input for the squat value
+    [Input('squat_vals', 'children')]
 )
 def update_squat_chart(n_clicks, squat_vals):
     if n_clicks is None:
-        # If the button is not clicked yet, keep the chart hidden
+
         return go.Figure(), {'display': 'none'}
 
     squat_percentile = user_data_perc.get('squat_perc', 0)
 
     if squat_percentile:
-        # Update the gauge chart with the calculated value
+
         squat_figure = go.Figure(go.Indicator(
             mode="gauge+number",
             value=squat_percentile,
             domain={'x': [0, 1], 'y': [0, 1]},
             title={'text': "Squat", 'font': {'color': 'white'}},
             gauge=dict(
-                axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
+                axis=dict(range=[0, 100], tickfont={'color': 'white'}),
                 #bar=dict(color="rgba(104,111,254,255)"),
                 bar=dict(color="rgba(255, 255, 255, 1)"),
-                bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
+                bgcolor="rgba(0, 0, 0, 0)"
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
         ))
 
         squat_figure.update_layout(
-            plot_bgcolor='rgba(0, 0, 0, 0)',  # Fully transparent background
-            paper_bgcolor='rgba(0, 0, 0, 0)'  # Fully transparent plot area background
+            plot_bgcolor='rgba(0, 0, 0, 0)',
+            paper_bgcolor='rgba(0, 0, 0, 0)'
         )
 
-        # Show the chart by updating the style property
+
         squat_style = {'display': 'block'}
 
         return squat_figure, squat_style
 
     else:
-        # If squat_percentile is None or 0, you may want to handle this case
+
         return go.Figure(), {'display': 'none'}
 
 
@@ -998,35 +992,35 @@ def update_squat_chart(n_clicks, squat_vals):
     [Output('bench_indicator_chart', 'figure'),
      Output('bench_indicator_chart', 'style')],
     [Input('add-data-button', 'n_clicks')],
-    [Input('bench_vals', 'children')]  # Assuming 'squat-input' is the input for the squat value
+    [Input('bench_vals', 'children')]
 )
 def update_bench_chart(n_clicks, squat_vals):
     if n_clicks is None:
-        # If the button is not clicked yet, keep the chart hidden
+
         return go.Figure(), {'display': 'none'}
 
 
     bench_percentile = user_data_perc.get('bench_perc', 0)
 
     if bench_percentile:
-        # Update the gauge chart with the calculated value
+
         bench_figure = go.Figure(go.Indicator(
             mode="gauge+number",
             value=bench_percentile,
             domain={'x': [0, 1], 'y': [0, 1]},
             title={'text': "Bench", 'font': {'color': 'white'}},
             gauge=dict(
-                axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
+                axis=dict(range=[0, 100], tickfont={'color': 'white'}),
                 #bar=dict(color="rgba(104,111,254,255)"),
                 bar=dict(color="rgba(255, 255, 255, 1.0)"),
-                bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
+                bgcolor="rgba(0, 0, 0, 0)"
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
         ))
 
         bench_figure.update_layout(
-            plot_bgcolor='rgba(0, 0, 0, 0)',  # Fully transparent background
-            paper_bgcolor='rgba(0, 0, 0, 0)'  # Fully transparent plot area background
+            plot_bgcolor='rgba(0, 0, 0, 0)',
+            paper_bgcolor='rgba(0, 0, 0, 0)'
         )
 
         # Show the chart by updating the style property
@@ -1035,7 +1029,7 @@ def update_bench_chart(n_clicks, squat_vals):
         return bench_figure, bench_style
 
     else:
-        # If squat_percentile is None or 0, you may want to handle this case
+
         return go.Figure(), {'display': 'none'}
 
 
@@ -1043,44 +1037,44 @@ def update_bench_chart(n_clicks, squat_vals):
     [Output('deadlift_indicator_chart', 'figure'),
      Output('deadlift_indicator_chart', 'style')],
     [Input('add-data-button', 'n_clicks')],
-    [Input('deadlift_vals', 'children')]  # Assuming 'squat-input' is the input for the squat value
+    [Input('deadlift_vals', 'children')]
 )
 def update_deadlift_chart(n_clicks, squat_vals):
     if n_clicks is None:
-        # If the button is not clicked yet, keep the chart hidden
+
         return go.Figure(), {'display': 'none'}
 
 
     deadlift_percentile = user_data_perc.get('deadlift_perc', 0)
 
     if deadlift_percentile:
-        # Update the gauge chart with the calculated value
+
         deadlift_figure = go.Figure(go.Indicator(
             mode="gauge+number",
             value=deadlift_percentile,
             domain={'x': [0, 1], 'y': [0, 1]},
             title={'text': "Deadlift", 'font': {'color': 'white'}},
             gauge=dict(
-                axis=dict(range=[0, 100], tickfont={'color': 'white'}),  # Assuming percentiles from 0 to 100
+                axis=dict(range=[0, 100], tickfont={'color': 'white'}),
                 #bar=dict(color="rgba(104,111,254,255)"),
                 bar=dict(color="rgba(255, 255, 255, 1.0)"),
-                bgcolor="rgba(0, 0, 0, 0)"  # Fully transparent background
+                bgcolor="rgba(0, 0, 0, 0)"
             ),
             number={'font': {'color': 'white'}, 'suffix':"%"}
         ))
 
         deadlift_figure.update_layout(
-            plot_bgcolor='rgba(0, 0, 0, 0)',  # Fully transparent background
-            paper_bgcolor='rgba(0, 0, 0, 0)'  # Fully transparent plot area background
+            plot_bgcolor='rgba(0, 0, 0, 0)',
+            paper_bgcolor='rgba(0, 0, 0, 0)'
         )
 
-        # Show the chart by updating the style property
+
         deadlift_style = {'display': 'block'}
 
         return deadlift_figure, deadlift_style
 
     else:
-        # If squat_percentile is None or 0, you may want to handle this case
+
         return go.Figure(), {'display': 'none'}
 
 
@@ -1091,14 +1085,13 @@ def update_deadlift_chart(n_clicks, squat_vals):
     [Input('sex-filter-t3', 'value')]
 )
 def update_dropdown_options(selected_gender):
-    # Check if a gender is selected before updating options
-    if selected_gender is None:
-        return [[]]  # Return empty options if no gender is selected
 
-    # Filter the dataframe based on the selected gender
+    if selected_gender is None:
+        return [[]]
+
     subset_df = df[(df['Sex'] == selected_gender) & (df['Event'] == 'SBD')]
 
-    # Create the options for the dropdown
+
     comp_lifter_filter = [{'label': Lifter, 'value': Lifter} for Lifter in subset_df['Name'].unique()]
 
     return [comp_lifter_filter]
@@ -1183,7 +1176,6 @@ def update_highest_placement(selected_lifter):
 )
 def update_line_chart(selected_lifter, view_type):
     if selected_lifter is None:
-        # If no option is selected, return an empty chart and hide it
         return px.line(title='Line Chart'), {'display': 'none'}
 
     lifter_stats_df = df
@@ -1191,17 +1183,13 @@ def update_line_chart(selected_lifter, view_type):
     if view_type == 'date':
         cols = ['Date', 'MeetName']
 
-        # Update the line chart with data based on the selected option
-        # Replace this with your actual data and logic
         lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
 
-        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
         unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
             cols.append('name_with_persona')
-            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
             lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
@@ -1218,8 +1206,8 @@ def update_line_chart(selected_lifter, view_type):
             facet_col=facet_col_expression,
             facet_col_wrap=7,
             title=f'Competition Performance by Date for {selected_lifter}',
-            markers=True,  # Set markers to True
-            line_shape='linear',  # Choose the line shape (optional)
+            markers=True,
+            line_shape='linear',
             hover_data = {'MeetName': True}
         )
 
@@ -1241,17 +1229,17 @@ def update_line_chart(selected_lifter, view_type):
         )
 
         line_chart_date.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
-            plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
-            font_color='white',  # Set font color to white
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color='white',
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=False),
             hovermode='x'
         )
 
         line_chart_date.update_layout(
-            xaxis_title='Date',  # Set x-axis title
-            yaxis_title='Weight (Kg)'  # Set y-axis title
+            xaxis_title='Date',
+            yaxis_title='Weight (Kg)'
         )
 
         line_chart_date.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
@@ -1261,7 +1249,6 @@ def update_line_chart(selected_lifter, view_type):
             line_chart_date.update_yaxes(matches=f'y{i}', showgrid=False)
 
 
-        # Show the line chart
         return line_chart_date, {'display': 'block'}
 
     elif view_type == 'weight':
@@ -1271,11 +1258,9 @@ def update_line_chart(selected_lifter, view_type):
         lifter_stats_df = lifter_stats_df[(lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
-        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
         unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
             cols.append('name_with_persona')
-            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
             lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg({'Best3SquatKg': 'sum', 'Best3BenchKg': 'sum', 'Best3DeadliftKg': 'sum'}).reset_index()
@@ -1291,8 +1276,8 @@ def update_line_chart(selected_lifter, view_type):
             facet_col=facet_col_expression,
             facet_col_wrap=7,
             title=f'Competition Performance by Weight (Kg) for {selected_lifter}',
-            markers=True,  # Set markers to True
-            line_shape='linear',  # Choose the line shape (optional)
+            markers=True,
+            line_shape='linear',
             hover_data={'MeetName': True, 'Date': True}
         )
 
@@ -1314,17 +1299,17 @@ def update_line_chart(selected_lifter, view_type):
         )
 
         line_chart_weight.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
-            plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
-            font_color='white',  # Set font color to white
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color='white',
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=False),
             hovermode='x'
         )
 
         line_chart_weight.update_layout(
-            xaxis_title='Bodyweight (Kg)',  # Set x-axis title
-            yaxis_title='Weight (Kg)'  # Set y-axis title
+            xaxis_title='Bodyweight (Kg)',
+            yaxis_title='Weight (Kg)'
         )
 
         line_chart_weight.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
@@ -1342,11 +1327,9 @@ def update_line_chart(selected_lifter, view_type):
             (lifter_stats_df['Name'] == selected_lifter) & (lifter_stats_df['Event'] == 'SBD')]
         lifter_stats_df = lifter_stats_df.drop_duplicates(subset=cols)
 
-        # unique_lifter_validation = clean_same_names(lifter_stats_df, 1)
         unique_lifter_validation = clean_same_names(lifter_stats_df)
         if unique_lifter_validation['persona'].nunique() > 1:
             cols.append('name_with_persona')
-            # lifter_stats_df = clean_same_names(lifter_stats_df, 1)
             lifter_stats_df = clean_same_names(lifter_stats_df)
 
         lifter_stats_df_agg = lifter_stats_df.groupby(cols).agg(
@@ -1363,8 +1346,8 @@ def update_line_chart(selected_lifter, view_type):
             facet_col=facet_col_expression,
             facet_col_wrap=7,
             title=f'Competition Performance by Age for {selected_lifter}',
-            markers=True,  # Set markers to True
-            line_shape='linear',  # Choose the line shape (optional)
+            markers=True,
+            line_shape='linear',
             hover_data={'MeetName': True, 'Date': True}
         )
 
@@ -1386,17 +1369,17 @@ def update_line_chart(selected_lifter, view_type):
         )
 
         line_chart_age.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',  # Set background transparency
-            plot_bgcolor='rgba(0,0,0,0)',  # Set plot area transparency
-            font_color='white',  # Set font color to white
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color='white',
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=False),
             hovermode='x'
         )
 
         line_chart_age.update_layout(
-            xaxis_title='Age',  # Set x-axis title
-            yaxis_title='Weight (Kg)'  # Set y-axis title
+            xaxis_title='Age',
+            yaxis_title='Weight (Kg)'
         )
 
         line_chart_age.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))

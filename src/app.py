@@ -177,7 +177,7 @@ def render_landing_page():
             html.Div([
                 html.Div([
                     dcc.Markdown(
-                        "- **Data Exploration Tab:** Explore the rich dataset powering this application, gaining insights into the provided data.\n\n"
+                        "- **WILKS Calculation Tab:** Calculate your WILKS score and see how well you compare against others who have competed in your State.\n\n"
                         "- **Comparative Analysis Tab:** Compare your current statistics with those of fellow competitors in your selected Weight Class, Age Class, and Federation.\n\n"
                         "- **Competitor Performance Tab:** Select from available competitors to view detailed performance metrics. Customize your view by Date, Bodyweight, or Age for a comprehensive analysis."
                     ),

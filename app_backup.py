@@ -1384,19 +1384,22 @@ def update_line_chart(selected_lifter, view_type):
     [Input('comp-lifter-filter', 'value')]
 )
 def update_player_card_1(selected_lifter):
-    if selected_lifter:
+    if user_data and selected_lifter:
+        user_best_squat_kg, user_best_squat_lbs = user_data.get('Best3SquatKg', 0), round(user_data.get('Best3SquatKg', 0) * 2.2, 1)
+        user_best_bench_kg, user_best_bench_lbs = user_data.get('Best3BenchKg', 0), round(user_data.get('Best3BenchKg', 0) * 2.2, 1)
+        user_best_deadlift_kg, user_best_deadlift_lbs = user_data.get('Best3DeadliftKg', 0), round(user_data.get('Best3DeadliftKg', 0) * 2.2, 1)
         return html.Div([
             html.Img(src='player_image_url', style={'width': '100px', 'height': '100px'}),
-            html.H3('Player Name 1'),
-            html.P('Team: Team Name 1'),
-            html.P('Position: Position Name 1'),
-            html.P('Age: 25'),
-            html.P('Height: 6\'2"'),
-            html.P('Weight: 200 lbs'),
-            html.P('Goals: 10'),
-            html.P('Assists: 5'),
-            html.P('Yellow Cards: 2'),
-            html.P('Red Cards: 0'),
+            print(user_data),
+            html.H3(user_data.get('Name', 'No Name')),
+            html.Br(),
+            html.Br(),
+            html.P(f"Age: {user_data.get('Age', 0)}"),
+            html.P(f"Weightclasses Competed: {estimated_comp_class.get('weightclass', 'Unknown')}"),
+            html.P(f"Number of SBD competitions: "),
+            html.P(f"Best Competition Squat: {user_best_squat_kg} (kg)/{user_best_squat_lbs} (lbs)"),
+            html.P(f"Best Competition Bench: {user_best_bench_kg} (kg)/{user_best_bench_lbs} (lbs)"),
+            html.P(f"Best Competition Deadlift: {user_best_deadlift_kg} (kg)/{user_best_deadlift_lbs} (lbs)")
         ], style={'border': '1px solid white', 'padding': '10px', 'border-radius': '10px', 'text-align': 'center'})
     else:
         return html.Div()  # Empty div when no lifter is selected
@@ -1412,9 +1415,9 @@ def update_player_card_2(selected_lifter):
         lifter_dict = lifter_stats_df.to_dict(orient='list')
         name = str(lifter_dict['Name'][0])
         min_age, max_age = min(lifter_dict['Age']), max(lifter_dict['Age'])
-        weightclasses = lifter_dict['WeightClassKg']
+        weightclasses = set(lifter_dict['WeightClassKg'])
         weightclasses_list = ', '.join(weightclasses)
-        times_competed = len(lifter_dict)
+        times_competed = len(lifter_dict['MeetName'])
         max_year = pd.to_datetime(max(lifter_dict['Date'], key=pd.to_datetime)).year
         active_flag = 'Yes' if max_year == datetime.datetime.now().year else 'No'
         best_squat_kg, best_squat_lbs = max(lifter_dict['Best3SquatKg']), round(max(lifter_dict['Best3SquatKg']) * 2.2, 1)

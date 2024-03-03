@@ -96,26 +96,23 @@ app.layout = html.Div(children=[
     # Collapsible Sidebar
     html.Div([
         dbc.Button("Menu", id="sidebar-toggle", className="mb-3",
-                   style={'background-color': '#333333', 'color': 'white', 'width': '100%'}),
+                   style={'background-color': '#333333', 'color': 'white', 'width': '75%', 'height': '40px', 'margin-bottom': '0px', 'padding-bottom': '0px'}),
         dbc.Collapse(
-            dbc.Nav(
+            dbc.Tabs(
                 [
-                    dbc.NavLink("Landing Page", href="/landing-page", id="nav-link-landing-page",
-                                style={'color': 'white'}),
-                    dbc.NavLink("WILKS Distribution", href="/wilks-distribution", id="nav-link-wilks-dist",
-                                style={'color': 'white'}),
-                    dbc.NavLink("Personal Powerlifting Stats", href="/compare-user-stats", id="nav-link-user-stats",
-                                style={'color': 'white'}),
-                    dbc.NavLink("Competitor Analytics", href="/competitor-analysis",
-                                id="nav-link-tab-comparative-analysis", style={'color': 'white'}),
+                    dbc.Tab(label="Landing Page", tab_id="landing-page", style={"height": "30px", "border": "none"}, active_label_style={"background-color": "#007bff"}),
+                    dbc.Tab(label="WILKS Distribution", tab_id="comp-data", style={"height": "30px", "border": "none"}, active_label_style={"background-color": "#007bff"}),
+                    dbc.Tab(label="Personal Powerlifting Stats", tab_id="user-stats", style={"height": "30px", "border": "none"}, active_label_style={"background-color": "#007bff"}),
+                    dbc.Tab(label="Competitor Analytics", tab_id="tab-comparative-analysis", style={"height": "30px", "border": "none"}, active_label_style={"background-color": "#007bff"}),
                 ],
-                vertical=True,
-                pills=True,
+                id="tabs",
+                active_tab="landing-page",
+                style={'background-color': '#333333', 'border-radius': '5px', 'width': '75%', 'color': 'white'},
             ),
             id="collapse-sidebar",
-            style={'background-color': '#333333', 'border-radius': '5px'}  # Add border-radius
+            style={'border-radius': '5px'}
         ),
-    ], style={'width': '8%', 'float': 'left', 'position': 'fixed', 'margin-top': '50px'}),
+    ], style = {'width': '8%', 'float': 'left', 'position': 'fixed', 'margin-top': '50px', 'margin-left': 'calc(50px + 0.02in)'}),
 
     # Main content area
     html.Div([
@@ -607,32 +604,18 @@ def toggle_sidebar(n, is_open):
     return is_open
 
 # Callback to update the content based on the selected sidebar link
-@app.callback([Output('tab-content', 'children'),
-               Output('nav-link-landing-page', 'style'),
-               Output('nav-link-wilks-dist', 'style'),
-               Output('nav-link-user-stats', 'style'),
-               Output('nav-link-tab-comparative-analysis', 'style')],
-              [Input('nav-link-landing-page', 'n_clicks'),
-               Input('nav-link-wilks-dist', 'n_clicks'),
-               Input('nav-link-user-stats', 'n_clicks'),
-               Input('nav-link-tab-comparative-analysis', 'n_clicks')])
-def render_content(*args):
-    ctx = dash.callback_context
-    if not ctx.triggered_id:
-        return render_landing_page(), {'display': 'block', 'width': '100%'}, {}, {}, {}
-
-    selected_style = {'background-color': '#007BFF', 'color': 'white', 'width': '100%'}
-    tab_id = ctx.triggered_id.split('.')[0].replace("nav-link-", "")
-    if tab_id == 'landing-page':
-        return render_landing_page(), selected_style, {}, {}, {}
-    elif tab_id == 'wilks-dist':
-        return render_comp_data(), {}, selected_style, {}, {}
-    elif tab_id == 'user-stats':
-        return render_user_stats(), {}, {}, selected_style, {},
-    elif tab_id == 'tab-comparative-analysis':
-        return render_comparative_analysis(), {}, {}, {}, selected_style
+@app.callback(Output('tab-content', 'children'), [Input('tabs', 'active_tab')])
+def render_content(active_tab):
+    if active_tab == 'landing-page':
+        return render_landing_page()
+    elif active_tab == 'comp-data':
+        return render_comp_data()
+    elif active_tab == 'user-stats':
+        return render_user_stats()
+    elif active_tab == 'tab-comparative-analysis':
+        return render_comparative_analysis()
     else:
-        return html.Div([]), {}, {}, {}, {}
+        return html.Div([])
 
 ''' Landing Page Tab'''
 ##need to add button functionalitty here

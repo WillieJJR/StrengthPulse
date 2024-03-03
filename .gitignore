@@ -10,3 +10,4 @@
 __pycache__/
 config.py
 scratch.py
+app_dev.py

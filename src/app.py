@@ -16,6 +16,7 @@ from scipy.stats import percentileofscore
 from data_retrieval import PowerliftingDataRetriever
 from data_cleaning import clean_same_names, calculate_wilks, classify_wilks
 from postgres_ingestion import PowerliftingDataHandler
+import time
 
 
 
@@ -92,6 +93,31 @@ link_color = '#007bff'
 
 
 app.layout = html.Div(children=[
+    # Collapsible Sidebar
+    html.Div([
+        dbc.Button("Menu", id="sidebar-toggle", className="mb-3",
+                   style={'background-color': '#333333', 'color': 'white', 'width': '100%'}),
+        dbc.Collapse(
+            dbc.Nav(
+                [
+                    dbc.NavLink("Landing Page", href="/landing-page", id="nav-link-landing-page",
+                                style={'color': 'white'}),
+                    dbc.NavLink("WILKS Distribution", href="/wilks-distribution", id="nav-link-wilks-dist",
+                                style={'color': 'white'}),
+                    dbc.NavLink("Personal Powerlifting Stats", href="/compare-user-stats", id="nav-link-user-stats",
+                                style={'color': 'white'}),
+                    dbc.NavLink("Competitor Analytics", href="/competitor-analysis",
+                                id="nav-link-tab-comparative-analysis", style={'color': 'white'}),
+                ],
+                vertical=True,
+                pills=True,
+            ),
+            id="collapse-sidebar",
+            style={'background-color': '#333333', 'border-radius': '5px'}  # Add border-radius
+        ),
+    ], style={'width': '8%', 'float': 'left', 'position': 'fixed', 'margin-top': '50px'}),
+
+    # Main content area
     html.Div([
         html.H1("StrengthPulse - A Powerlifting Performance Analyzer App", style={'text-align': 'center'}),
         html.Div([
@@ -99,16 +125,9 @@ app.layout = html.Div(children=[
                    "Benchmark your lifting numbers, gain insights, and optimize your training.",
                    style={'text-align': 'center'}),
         ]),
-    ], style={'margin': '20px'}),
 
-    dbc.Tabs(id='tabs', active_tab='landing-page', children=[
-        dbc.Tab(label='Landing Page', tab_id='landing-page'),
-        dbc.Tab(label='Most Current Competition Data', tab_id='comp-data'),
-        dbc.Tab(label='Personal Powerlifting Stats', tab_id='user-stats'),
-        dbc.Tab(label='Competitor Analytics', tab_id='tab-comparative-analysis'),
-    ]),
-
-    html.Div(id='tab-content', style={'margin-top': '20px'}),
+        html.Div(id='tab-content', style={'margin-top': '20px'}),
+    ], style={'width': '90%', 'float': 'right', 'margin-left': '20%', 'padding': '20px'}),
 ])
 
 #handle local deployment vs server deployment
@@ -367,12 +386,18 @@ def render_comp_data():
             dbc.Col([
                 # Add your plot component here
                 html.Div([
-                    dcc.Graph(
-                        id='distribution-plot-t2',
-                        # Add plot properties and data here
-                    style={'height': '80vh'}),
-                ], id='distribution-plot-container-t2', style={'height': '100%', 'display': 'none'})
-            ], width=10,  style={'height': '100vh'}),  # Set the width to 8 (2/3 of the screen)
+                    dcc.Loading(
+                        id="loading-t2",
+                        type="default",
+                        children=[
+                            dcc.Graph(
+                                id='distribution-plot-t2',
+                                # Add plot properties and data here
+                                style={'height': '80vh'}),
+                        ],
+                    ),
+                ], id='distribution-plot-container-t2', style={'height': '100%'}),
+            ], width=10, style={'height': '100vh'}),  # Set the width to 8 (2/3 of the screen)
         ]),
         dcc.Store(id='kpi-store', storage_type='memory', data={'kpi_text': ''})
 
@@ -559,26 +584,55 @@ def render_comparative_analysis():
             inputStyle={'margin-right': '5px'},
             style={'display': 'flex', 'flexDirection': 'column', 'width': '300px'}
         ),
-        dcc.Graph(
-            id='line-chart',
-            figure=px.line(title='Line Chart'),
-            style={'display': 'none'}  # Initially hide the line chart
+        dcc.Loading(
+            id="loading-line-chart",
+            type="default",
+            children=[
+                dcc.Graph(
+                    id='line-chart',
+                    figure=px.line(title='Line Chart'),
+                    style={'display': 'none'}  # Initially hide the line chart
+                ),
+            ],
         )
     ])
 
 
-@app.callback(Output('tab-content', 'children'), [Input('tabs', 'active_tab')])
-def render_content(active_tab):
-    if active_tab == 'landing-page':
-        return render_landing_page()
-    elif active_tab == 'comp-data':
-        return render_comp_data()
-    elif active_tab == 'user-stats':
-        return render_user_stats()
-    elif active_tab == 'tab-comparative-analysis':
-        return render_comparative_analysis()
+@app.callback(Output("collapse-sidebar", "is_open"),
+              [Input("sidebar-toggle", "n_clicks")],
+              [State("collapse-sidebar", "is_open")])
+def toggle_sidebar(n, is_open):
+    if n:
+        return not is_open
+    return is_open
+
+# Callback to update the content based on the selected sidebar link
+@app.callback([Output('tab-content', 'children'),
+               Output('nav-link-landing-page', 'style'),
+               Output('nav-link-wilks-dist', 'style'),
+               Output('nav-link-user-stats', 'style'),
+               Output('nav-link-tab-comparative-analysis', 'style')],
+              [Input('nav-link-landing-page', 'n_clicks'),
+               Input('nav-link-wilks-dist', 'n_clicks'),
+               Input('nav-link-user-stats', 'n_clicks'),
+               Input('nav-link-tab-comparative-analysis', 'n_clicks')])
+def render_content(*args):
+    ctx = dash.callback_context
+    if not ctx.triggered_id:
+        return render_landing_page(), {'display': 'block', 'width': '100%'}, {}, {}, {}
+
+    selected_style = {'background-color': '#007BFF', 'color': 'white', 'width': '100%'}
+    tab_id = ctx.triggered_id.split('.')[0].replace("nav-link-", "")
+    if tab_id == 'landing-page':
+        return render_landing_page(), selected_style, {}, {}, {}
+    elif tab_id == 'wilks-dist':
+        return render_comp_data(), {}, selected_style, {}, {}
+    elif tab_id == 'user-stats':
+        return render_user_stats(), {}, {}, selected_style, {},
+    elif tab_id == 'tab-comparative-analysis':
+        return render_comparative_analysis(), {}, {}, {}, selected_style
     else:
-        return html.Div([])
+        return html.Div([]), {}, {}, {}, {}
 
 ''' Landing Page Tab'''
 ##need to add button functionalitty here
@@ -692,6 +746,7 @@ def update_kpi_text(n_clicks, switch, gender, total, bw):
 def create_wilks_distribution(n_clicks, federation, location, gender, total, bw):
 
     if n_clicks:
+        time.sleep(1)
 
         wilks_df = df[(df['Federation'].isin(federation)) & (df['MeetState'].isin(location))]
         print(len(wilks_df))
@@ -1187,6 +1242,7 @@ def update_line_chart(selected_lifter, view_type):
         return px.line(title='Line Chart'), {'display': 'none'}
 
     lifter_stats_df = df
+    time.sleep(1)
 
     if view_type == 'date':
         cols = ['Date', 'MeetName']

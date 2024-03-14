@@ -96,23 +96,34 @@ app.layout = html.Div(children=[
     # Collapsible Sidebar
     html.Div([
         dbc.Button("Menu", id="sidebar-toggle", className="mb-3",
-                   style={'background-color': '#333333', 'color': 'white', 'width': '75%', 'height': '40px', 'margin-bottom': '0px', 'padding-bottom': '0px'}),
+                   style={'background-color': '#333333', 'color': 'white', 'width': '75%', 'height': '40px',
+                          'margin-bottom': '0px', 'padding-bottom': '0px'}),
         dbc.Collapse(
             dbc.Tabs(
                 [
-                    dbc.Tab(label="Landing Page", tab_id="landing-page", style={"height": "30px", "border": "none"}, active_label_style={"background-color": "#007bff"}),
-                    dbc.Tab(label="WILKS Distribution", tab_id="comp-data", style={"height": "30px", "border": "none"}, active_label_style={"background-color": "#007bff"}),
-                    dbc.Tab(label="Personal Powerlifting Stats", tab_id="user-stats", style={"height": "30px", "border": "none"}, active_label_style={"background-color": "#007bff"}),
-                    dbc.Tab(label="Competitor Analytics", tab_id="tab-comparative-analysis", style={"height": "30px", "border": "none"}, active_label_style={"background-color": "#007bff"}),
+                    dbc.Tab(label="Landing Page", tab_id="landing-page",
+                            style={"width": "200px", "height": "50px", "padding": "10px", "border": "none"},
+                            active_label_style={"background-color": "#007bff"}),
+                    dbc.Tab(label="WILKS Distribution", tab_id="comp-data",
+                            style={"width": "200px", "height": "50px", "padding": "10px", "border": "none"},
+                            active_label_style={"background-color": "#007bff"}),
+                    dbc.Tab(label="Personal Powerlifting Stats", tab_id="user-stats",
+                            style={"width": "200px", "height": "50px", "padding": "10px", "border": "none"},
+                            active_label_style={"background-color": "#007bff"}),
+                    dbc.Tab(label="Competitor Analytics", tab_id="tab-comparative-analysis",
+                            style={"width": "200px", "height": "50px", "padding": "10px", "border": "none"},
+                            active_label_style={"background-color": "#007bff"}),
                 ],
                 id="tabs",
                 active_tab="landing-page",
-                style={'background-color': '#333333', 'border-radius': '5px', 'width': '75%', 'color': 'white'},
+                style={'background-color': '#333333', 'border-radius': '5px', 'width': '100%', 'color': 'white'},
+                className="nav nav-tabs nav-fill"
             ),
             id="collapse-sidebar",
-            style={'border-radius': '5px'}
+            style={'border-radius': '5px', 'width': '100%'}
         ),
-    ], style = {'width': '8%', 'float': 'left', 'position': 'fixed', 'margin-top': '50px', 'margin-left': 'calc(50px + 0.02in)'}),
+    ], style={'width': '8%', 'float': 'left', 'position': 'fixed', 'margin-top': '50px',
+              'margin-left': 'calc(40px + 0.02in)'}),
 
     # Main content area
     html.Div([
@@ -253,7 +264,7 @@ def render_comp_data():
                             id='lbs-switch-t2',
                             on=False,
                             labelPosition="top",
-                            color='#008000'
+                            color='#2f7cff'
                         ),
                     ], style={'display': 'flex', 'gap': '10px', 'justify-content': 'flex-start'}),
                     html.Br(),
@@ -281,12 +292,12 @@ def render_comp_data():
                 ], style={'width': '100%', 'max-width': '100%', 'margin-bottom': '20px'}),
 
                 dbc.Container([
-                    html.Label('Estimated Bodyweight in Kg..'),
+                    html.Label('Estimated Bodyweight..'),
                     html.Div([
                         dcc.Input(
                             id='bodyweight-filter-t2',
                             type='number',
-                            placeholder='Bodyweight (Kg)',
+                            placeholder='Bodyweight',
                             style={'width': '100%', 'display': 'inline-block', 'margin-right': '5%'}
                         ),
                     ]),
@@ -424,7 +435,7 @@ def render_user_stats():
                 id='lbs-switch-t3',
                 on=False,
                 labelPosition="top",
-                color='#008000'
+                color='#2f7cff'
             ),
         ], style={'display': 'flex', 'gap': '10px', 'justify-content': 'flex-start'}),
         dcc.RadioItems(
@@ -809,7 +820,7 @@ def update_tested_button(n_clicks):
     if n_clicks and n_clicks % 2 == 0:
         tested_button_style = {
             'borderRadius': '12px',
-            'background-color': 'rgba(0, 255, 0, 0.5) ',
+            'background-color': 'rgba(47,124,255, 1) ',
             'color': 'white',
             'height': '30px',  # set the height of the buttons
             'width': '90px',  # set the width of the buttons

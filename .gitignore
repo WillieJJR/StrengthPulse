@@ -11,3 +11,6 @@ __pycache__/
 config.py
 scratch.py
 app_dev.py
+
+# Ignore log files
+import_log.txt

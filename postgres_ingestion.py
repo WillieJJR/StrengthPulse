@@ -2,6 +2,7 @@ import psycopg2
 from data_retrieval import PowerliftingDataRetriever
 from psycopg2 import sql
 import pandas as pd
+import logging
 from io import StringIO
 from data_cleaning import remove_special_chars, convert_kg_to_lbs, apply_business_rules
 
@@ -125,24 +126,46 @@ class PowerliftingDataHandler:
         Returns:
         None
         """
+        IGNORE_COLUMN_NAMES = ['Sanctioned']
+        if IGNORE_COLUMN_NAMES:
+            csv_data = csv_data.drop(columns=IGNORE_COLUMN_NAMES, errors='ignore')
+
+
+        logging.basicConfig(filename='import_log.txt', level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
 
         conn = psycopg2.connect(self.database_url)
         cur = conn.cursor()
+        try:
+            conn.autocommit = False
+            # Insert data into the table
+            csv_data_string = StringIO()
+            csv_data.to_csv(csv_data_string, index=False, header=False)
+            csv_data_string.seek(0)
 
-        # Insert data into the table
-        csv_data_string = StringIO()
-        csv_data.to_csv(csv_data_string, index=False, header=False)
-        csv_data_string.seek(0)
-
-        copy_query = f"COPY {table_name} FROM STDIN WITH CSV DELIMITER ','"
-        cur.copy_expert(copy_query, csv_data_string)
-
-        # Commit the transaction
-        conn.commit()
-
-        # Close the cursor and connection
-        cur.close()
-        conn.close()
+            copy_query = f"COPY {table_name} FROM STDIN WITH CSV DELIMITER ','"
+            try:
+                cur.copy_expert(copy_query, csv_data_string)
+            except psycopg2.errors.BadCopyFileFormat as e:
+                logging.error(f"Error: {e}")
+                problematic_row = csv_data.iloc[cur.rowcount]
+                logging.error(f"Problematic row: {problematic_row}")
+                print("Problematic row:", problematic_row)
+                # Skip to the next row
+                csv_data_string.seek(0)  # Reset the StringIO position
+                next(csv_data_string)  # Skip the problematic row
+                # Retry the COPY command without the problematic row
+                cur.copy_expert(copy_query, csv_data_string)
+            conn.commit()
+        except psycopg2.Error as e:
+            # Log any other errors and raise the exception
+            logging.error(f"Error: {e}")
+            conn.rollback()
+            raise e
+        finally:
+            # Close the cursor and connection
+            cur.close()
+            conn.close()
 
 
     def fetch_data(self, table_name):

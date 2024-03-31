@@ -96,7 +96,7 @@ app.layout = html.Div(children=[
     # Collapsible Sidebar
     html.Div([
         dbc.Button("Menu", id="sidebar-toggle", className="mb-3",
-                   style={'background-color': '#333333', 'color': 'white', 'width': '75%', 'height': '40px',
+                   style={'background-color': '#333333', 'color': 'white', 'width': '100%', 'height': '40px',
                           'margin-bottom': '0px', 'padding-bottom': '0px'}),
         dbc.Collapse(
             dbc.Tabs(

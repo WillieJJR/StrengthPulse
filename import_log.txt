@@ -1,0 +1,96 @@
+2024-03-31 14:01:46,342 - ERROR - Error: extra data after last expected column
+CONTEXT:  COPY powerlifting_data, line 1: "Sonya Jones,F,BD,Raw,65.0,65-69,60-69,Masters 65-69,81.6,82.5,,,,,,,,,,42.5,,,,,105.0,147.5,1,137.63..."
+
+2024-03-31 14:01:46,344 - ERROR - Problematic row: Name                                Michael Harris
+Sex                                              M
+Event                                          SBD
+Equipment                                      Raw
+Age                                           26.5
+AgeClass                                     24-34
+BirthYearClass                               24-39
+Division                                      Open
+BodyweightKg                                 91.85
+WeightClassKg                                   93
+Squat1Kg                                     210.0
+Squat2Kg                                     220.0
+Squat3Kg                                    -230.0
+Squat4Kg                                       NaN
+Best3SquatKg                                 220.0
+Bench1Kg                                     145.0
+Bench2Kg                                     150.0
+Bench3Kg                                     155.0
+Bench4Kg                                       NaN
+Best3BenchKg                                 155.0
+Deadlift1Kg                                  220.0
+Deadlift2Kg                                  230.0
+Deadlift3Kg                                  235.0
+Deadlift4Kg                                    NaN
+Best3DeadliftKg                              235.0
+TotalKg                                      610.0
+Place                                           13
+Dots                                        390.46
+Wilks                                        385.5
+Glossbrenner                                369.14
+Goodlift                                     80.29
+Tested                                         Yes
+Country                                        USA
+State                                          NaN
+Federation                                    APLA
+ParentFederation                               IPF
+Date                           2024-03-08 00:00:00
+MeetCountry                              Australia
+MeetState                                      NSW
+MeetTown                                       NaN
+MeetName            Nationals Series: Open Classic
+Sanctioned                                     Yes
+Name: 2821, dtype: object
+2024-03-31 14:01:46,369 - ERROR - Error: current transaction is aborted, commands ignored until end of transaction block
+
+2024-03-31 14:09:33,105 - ERROR - Error: extra data after last expected column
+CONTEXT:  COPY powerlifting_data, line 1: "Sonya Jones,F,BD,Raw,65.0,65-69,60-69,Masters 65-69,81.6,82.5,,,,,,,,,,42.5,,,,,105.0,147.5,1,137.63..."
+
+2024-03-31 14:09:33,106 - ERROR - Problematic row: Name                                Michael Harris
+Sex                                              M
+Event                                          SBD
+Equipment                                      Raw
+Age                                           26.5
+AgeClass                                     24-34
+BirthYearClass                               24-39
+Division                                      Open
+BodyweightKg                                 91.85
+WeightClassKg                                   93
+Squat1Kg                                     210.0
+Squat2Kg                                     220.0
+Squat3Kg                                    -230.0
+Squat4Kg                                       NaN
+Best3SquatKg                                 220.0
+Bench1Kg                                     145.0
+Bench2Kg                                     150.0
+Bench3Kg                                     155.0
+Bench4Kg                                       NaN
+Best3BenchKg                                 155.0
+Deadlift1Kg                                  220.0
+Deadlift2Kg                                  230.0
+Deadlift3Kg                                  235.0
+Deadlift4Kg                                    NaN
+Best3DeadliftKg                              235.0
+TotalKg                                      610.0
+Place                                           13
+Dots                                        390.46
+Wilks                                        385.5
+Glossbrenner                                369.14
+Goodlift                                     80.29
+Tested                                         Yes
+Country                                        USA
+State                                          NaN
+Federation                                    APLA
+ParentFederation                               IPF
+Date                           2024-03-08 00:00:00
+MeetCountry                              Australia
+MeetState                                      NSW
+MeetTown                                       NaN
+MeetName            Nationals Series: Open Classic
+Sanctioned                                     Yes
+Name: 2821, dtype: object
+2024-03-31 14:09:33,131 - ERROR - Error: current transaction is aborted, commands ignored until end of transaction block
+

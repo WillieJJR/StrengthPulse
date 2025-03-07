@@ -149,6 +149,7 @@ except ImportError:
 
 
 
+
 postgres_instance = PowerliftingDataHandler(database_url)
 df = postgres_instance.fetch_data(table_name='powerlifting_data')
 
